@@ -65,9 +65,13 @@
 - Create: `/Users/robert/code/ispf-editor/.gitignore`
 - Create: `/Users/robert/code/ispf-editor/rust-toolchain.toml`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-core/Cargo.toml`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/lib.rs`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-command/Cargo.toml`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-command/src/lib.rs`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-screen/Cargo.toml`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-screen/src/lib.rs`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-tui/Cargo.toml`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-tui/src/main.rs`
 
 - [ ] **Step 1: Create the root workspace manifest**
 
@@ -97,9 +101,12 @@ unicode-width = "0.2"
 
 - [ ] **Step 2: Add a root `.gitignore`**
 
+Preserve the existing linked-worktree safety rule so future `.worktrees/` directories stay ignored.
+
 ```gitignore
 /target
 /.superpowers
+/.worktrees
 Cargo.lock
 ```
 
@@ -176,12 +183,38 @@ ispf-screen = { path = "../ispf-screen" }
 ratatui.workspace = true
 ```
 
-- [ ] **Step 5: Run Cargo metadata to verify the workspace resolves**
+- [ ] **Step 5: Add minimal source stubs so Cargo can validate the workspace**
+
+`/Users/robert/code/ispf-editor/crates/ispf-core/src/lib.rs`
+
+```rust
+//! Core library stub for workspace validation.
+```
+
+`/Users/robert/code/ispf-editor/crates/ispf-command/src/lib.rs`
+
+```rust
+//! Command parser stub for workspace validation.
+```
+
+`/Users/robert/code/ispf-editor/crates/ispf-screen/src/lib.rs`
+
+```rust
+//! Screen model stub for workspace validation.
+```
+
+`/Users/robert/code/ispf-editor/crates/ispf-tui/src/main.rs`
+
+```rust
+fn main() {}
+```
+
+- [ ] **Step 6: Run Cargo metadata to verify the workspace resolves**
 
 Run: `cargo metadata --no-deps`
 Expected: command exits `0` and lists the four workspace packages
 
-- [ ] **Step 6: Commit the workspace scaffold**
+- [ ] **Step 7: Commit the workspace scaffold**
 
 ```bash
 git add Cargo.toml .gitignore rust-toolchain.toml crates
