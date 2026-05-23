@@ -1,0 +1,4 @@
+/.superpowers
+/.worktrees
+/target
+Cargo.lock
