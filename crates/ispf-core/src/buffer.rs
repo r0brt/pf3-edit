@@ -39,6 +39,8 @@ impl Default for EditBuffer {
 
 impl EditBuffer {
     pub fn from_text(input: &str) -> Self {
+        validate_single_newline_style(input)
+            .expect("mixed newline input is not supported for EditBuffer::from_text");
         let mut next_id = 1;
         let mut records = Vec::new();
         for line in input.lines() {

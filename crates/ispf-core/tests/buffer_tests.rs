@@ -120,3 +120,22 @@ fn rejects_mixed_newline_files() {
         "unexpected error: {error}"
     );
 }
+
+#[test]
+fn rejects_mixed_newlines_from_text() {
+    let panic = std::panic::catch_unwind(|| EditBuffer::from_text("LINE1\r\nLINE2\nLINE3\r\n"))
+        .expect_err("mixed newline input should be rejected");
+
+    let message = if let Some(message) = panic.downcast_ref::<String>() {
+        message.as_str()
+    } else if let Some(message) = panic.downcast_ref::<&str>() {
+        message
+    } else {
+        panic!("unexpected panic payload");
+    };
+
+    assert!(
+        message.contains("mixed newline"),
+        "unexpected panic: {message}"
+    );
+}
