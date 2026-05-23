@@ -1125,7 +1125,10 @@ git commit -m "feat: add screen rendering model"
 ```rust
 #[test]
 fn sample_fixture_exists_for_manual_smoke_runs() {
-    let fixture = std::path::Path::new("/Users/robert/code/ispf-editor/fixtures/sample.txt");
+    let fixture = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../fixtures/sample.txt"
+    ));
     assert!(fixture.exists());
 }
 ```
@@ -1154,7 +1157,6 @@ fn main() -> Result<()> {
 
 ```rust
 use anyhow::Result;
-use crossterm::event::{self, Event};
 use ispf_core::{EditBuffer, EditorSession};
 use ispf_screen::render_screen;
 
@@ -1162,11 +1164,6 @@ pub fn run() -> Result<()> {
     let buffer = EditBuffer::from_text("ISPF EDITOR\n").unwrap();
     let session = EditorSession::new(buffer);
     let _screen = render_screen(&session, 80, 24);
-
-    if event::poll(std::time::Duration::from_millis(10))? {
-        let _ = event::read()?;
-    }
-
     Ok(())
 }
 ```
