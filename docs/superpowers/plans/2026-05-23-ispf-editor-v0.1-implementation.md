@@ -240,14 +240,14 @@ use ispf_core::{EditBuffer, Record};
 
 #[test]
 fn loads_records_from_text_preserving_order() {
-    let buffer = EditBuffer::from_text("ONE\nTWO\nTHREE\n");
+    let buffer = EditBuffer::from_text("ONE\nTWO\nTHREE\n").unwrap();
     let texts: Vec<&str> = buffer.records().iter().map(Record::text).collect();
     assert_eq!(texts, vec!["ONE", "TWO", "THREE"]);
 }
 
 #[test]
 fn insert_and_delete_update_dirty_state() {
-    let mut buffer = EditBuffer::from_text("ALPHA\nBETA\n");
+    let mut buffer = EditBuffer::from_text("ALPHA\nBETA\n").unwrap();
     assert!(!buffer.is_dirty());
 
     buffer.insert_after(0, "GAMMA");
@@ -260,7 +260,7 @@ fn insert_and_delete_update_dirty_state() {
 
 #[test]
 fn exclude_marks_line_without_removing_record() {
-    let mut buffer = EditBuffer::from_text("A\nB\n");
+    let mut buffer = EditBuffer::from_text("A\nB\n").unwrap();
     buffer.set_excluded(1, true).unwrap();
     assert!(buffer.records()[1].excluded);
 }
@@ -344,7 +344,12 @@ impl Default for EditBuffer {
 }
 
 impl EditBuffer {
-    pub fn from_text(input: &str) -> Self {
+    pub fn from_text(input: &str) -> std::io::Result<Self> {
+        Self::try_from_text(input)
+    }
+
+    pub fn try_from_text(input: &str) -> std::io::Result<Self> {
+        validate_single_newline_style(input)?;
         let mut next_id = 1;
         let mut records = Vec::new();
         for line in input.lines() {
@@ -355,24 +360,18 @@ impl EditBuffer {
             });
             next_id += 1;
         }
-        Self {
+        Ok(Self {
             records,
             next_id,
             newline: detect_newline(input),
             trailing_newline: input.ends_with('\n'),
             ..Self::default()
-        }
+        })
     }
 
     pub fn from_path(path: &std::path::Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
-        if has_mixed_newlines(&text) {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "mixed newline styles are not supported",
-            ));
-        }
-        let mut buffer = Self::from_text(&text);
+        let mut buffer = Self::try_from_text(&text)?;
         buffer.file_path = Some(path.to_path_buf());
         Ok(buffer)
     }
@@ -454,8 +453,42 @@ fn detect_newline(input: &str) -> &'static str {
     }
 }
 
-fn has_mixed_newlines(input: &str) -> bool {
-    input.contains("\r\n") && input.replace("\r\n", "").contains('\n')
+fn validate_single_newline_style(input: &str) -> std::io::Result<()> {
+    let bytes = input.as_bytes();
+    let mut saw_lf = false;
+    let mut saw_crlf = false;
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match bytes[index] {
+            b'\r' => {
+                if bytes.get(index + 1) != Some(&b'\n') {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "unsupported carriage return newline in text file",
+                    ));
+                }
+                saw_crlf = true;
+                index += 2;
+            }
+            b'\n' => {
+                saw_lf = true;
+                index += 1;
+            }
+            _ => {
+                index += 1;
+            }
+        }
+
+        if saw_lf && saw_crlf {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "mixed newline styles are not supported",
+            ));
+        }
+    }
+
+    Ok(())
 }
 ```
 
@@ -510,6 +543,7 @@ Post-review hardening for this task is allowed and expected:
 
 - preserve CRLF and missing trailing newline on no-op save
 - reject mixed newline styles explicitly instead of silently rewriting them
+- keep the constructor contract consistent by using a fallible in-memory text constructor path
 - make `insert_after` safe for empty and out-of-range indexes
 - keep `EditBuffer::default()` valid
 - add focused edge-case tests for these behaviors
@@ -536,7 +570,7 @@ use ispf_core::{ActiveArea, CapsMode, EditBuffer, EditProfile, EditorSession};
 
 #[test]
 fn new_session_starts_in_data_area() {
-    let buffer = EditBuffer::from_text("A\n");
+    let buffer = EditBuffer::from_text("A\n").unwrap();
     let session = EditorSession::new(buffer);
     assert_eq!(session.view().active_area, ActiveArea::DataArea);
 }
@@ -851,7 +885,7 @@ use ispf_command::{PrefixCommand, PrimaryCommand};
 
 #[test]
 fn execute_primary_scrolls_and_toggles_profile() {
-    let buffer = EditBuffer::from_text("A\nB\nC\n");
+    let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
     session.execute_primary(PrimaryCommand::Down(2)).unwrap();
@@ -863,7 +897,7 @@ fn execute_primary_scrolls_and_toggles_profile() {
 
 #[test]
 fn execute_prefix_delete_removes_the_target_line() {
-    let buffer = EditBuffer::from_text("A\nB\nC\n");
+    let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
     session.execute_prefix(1, PrefixCommand::Delete).unwrap();
@@ -996,7 +1030,7 @@ use ispf_screen::render_screen;
 
 #[test]
 fn renders_command_line_prefix_area_and_data_rows() {
-    let session = EditorSession::new(EditBuffer::from_text("ONE\nTWO\n"));
+    let session = EditorSession::new(EditBuffer::from_text("ONE\nTWO\n").unwrap());
     let screen = render_screen(&session, 80, 24);
 
     assert_eq!(screen.command_prompt, "Command ===>");
@@ -1125,7 +1159,7 @@ use ispf_core::{EditBuffer, EditorSession};
 use ispf_screen::render_screen;
 
 pub fn run() -> Result<()> {
-    let buffer = EditBuffer::from_text("ISPF EDITOR\n");
+    let buffer = EditBuffer::from_text("ISPF EDITOR\n").unwrap();
     let session = EditorSession::new(buffer);
     let _screen = render_screen(&session, 80, 24);
 
@@ -1204,7 +1238,7 @@ git commit -m "feat: add initial TUI shell"
 ```rust
 #[test]
 fn find_positions_cursor_on_matching_record() {
-    let buffer = EditBuffer::from_text("ZERO\nALPHA\nOMEGA\n");
+    let buffer = EditBuffer::from_text("ZERO\nALPHA\nOMEGA\n").unwrap();
     let mut session = EditorSession::new(buffer);
     session.execute_primary(PrimaryCommand::Find { pattern: "ALPHA".into() }).unwrap();
     assert_eq!(session.view().cursor_row, 1);
@@ -1212,7 +1246,7 @@ fn find_positions_cursor_on_matching_record() {
 
 #[test]
 fn change_replaces_text_in_place() {
-    let buffer = EditBuffer::from_text("OLD VALUE\n");
+    let buffer = EditBuffer::from_text("OLD VALUE\n").unwrap();
     let mut session = EditorSession::new(buffer);
     session.execute_primary(PrimaryCommand::Change { from: "OLD".into(), to: "NEW".into() }).unwrap();
     assert_eq!(session.buffer().records()[0].text(), "NEW VALUE");
@@ -1220,7 +1254,7 @@ fn change_replaces_text_in_place() {
 
 #[test]
 fn undo_restores_deleted_line() {
-    let buffer = EditBuffer::from_text("A\nB\n");
+    let buffer = EditBuffer::from_text("A\nB\n").unwrap();
     let mut session = EditorSession::new(buffer);
     session.execute_prefix(1, PrefixCommand::Delete).unwrap();
     session.execute_primary(PrimaryCommand::Undo).unwrap();
