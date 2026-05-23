@@ -66,3 +66,43 @@ fn execute_prefix_delete_removes_the_target_line() {
     session.execute_prefix(1, PrefixCommand::Delete).unwrap();
     assert_eq!(session.buffer().records()[1].text(), "C");
 }
+
+#[test]
+fn find_positions_cursor_on_matching_record() {
+    let buffer = EditBuffer::from_text("ZERO\nALPHA\nOMEGA\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Find {
+            pattern: "ALPHA".into(),
+        })
+        .unwrap();
+
+    assert_eq!(session.view().cursor_row, 1);
+}
+
+#[test]
+fn change_replaces_text_in_place() {
+    let buffer = EditBuffer::from_text("OLD VALUE\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Change {
+            from: "OLD".into(),
+            to: "NEW".into(),
+        })
+        .unwrap();
+
+    assert_eq!(session.buffer().records()[0].text(), "NEW VALUE");
+}
+
+#[test]
+fn undo_restores_deleted_line() {
+    let buffer = EditBuffer::from_text("A\nB\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(1, PrefixCommand::Delete).unwrap();
+    session.execute_primary(PrimaryCommand::Undo).unwrap();
+
+    assert_eq!(session.buffer().records()[1].text(), "B");
+}

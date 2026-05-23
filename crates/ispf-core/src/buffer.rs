@@ -124,6 +124,10 @@ impl EditBuffer {
         self.dirty = true;
     }
 
+    pub fn insert_before(&mut self, index: usize, text: &str) {
+        self.insert_at(index.min(self.records.len()), text);
+    }
+
     pub fn delete_at(&mut self, index: usize) -> Option<Record> {
         if index >= self.records.len() {
             return None;
@@ -138,6 +142,27 @@ impl EditBuffer {
             return Some(());
         }
         record.excluded = excluded;
+        self.dirty = true;
+        Some(())
+    }
+
+    pub fn replace_first(&mut self, from: &str, to: &str) -> Option<usize> {
+        for (index, record) in self.records.iter_mut().enumerate() {
+            if record.text.contains(from) {
+                record.text = record.text.replacen(from, to, 1);
+                self.dirty = true;
+                return Some(index);
+            }
+        }
+        None
+    }
+
+    pub(crate) fn replace_line(&mut self, index: usize, text: &str) -> Option<()> {
+        let record = self.records.get_mut(index)?;
+        if record.text == text {
+            return Some(());
+        }
+        record.text = text.to_string();
         self.dirty = true;
         Some(())
     }

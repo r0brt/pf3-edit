@@ -10,3 +10,4 @@ unicode-width.workspace = true
 
 [dev-dependencies]
 insta.workspace = true
+ispf-command = { path = "../ispf-command" }

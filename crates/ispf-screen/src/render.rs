@@ -21,11 +21,16 @@ pub fn render_screen(session: &EditorSession, _width: u16, height: u16) -> Scree
         .buffer()
         .records()
         .iter()
+        .enumerate()
         .skip(session.view().top_row)
-        .filter(|record| !record.excluded)
+        .filter(|(_, record)| !record.excluded)
         .take(visible_rows)
-        .map(|record| ScreenRow {
-            prefix: String::new(),
+        .map(|(index, record)| ScreenRow {
+            prefix: if session.profile().number_mode {
+                format!("{:>6}", index + 1)
+            } else {
+                String::new()
+            },
             text: record.text.clone(),
         })
         .collect();
@@ -35,6 +40,9 @@ pub fn render_screen(session: &EditorSession, _width: u16, height: u16) -> Scree
         command_prompt: "Command ===>".into(),
         scroll_label: "Scroll ===>".into(),
         rows,
-        message: String::new(),
+        message: session
+            .message()
+            .map(|message| message.text.clone())
+            .unwrap_or_default(),
     }
 }
