@@ -107,14 +107,13 @@ Preserve the existing linked-worktree safety rule so future `.worktrees/` direct
 /target
 /.superpowers
 /.worktrees
-Cargo.lock
 ```
 
 - [ ] **Step 3: Pin the Rust toolchain**
 
 ```toml
 [toolchain]
-channel = "stable"
+channel = "1.95.0"
 components = ["rustfmt", "clippy"]
 ```
 
