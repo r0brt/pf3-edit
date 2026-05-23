@@ -226,6 +226,9 @@ git commit -m "chore: scaffold Rust workspace"
 **Files:**
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/lib.rs`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/buffer.rs`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/profile.rs`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/session.rs`
+- Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/undo.rs`
 - Test: `/Users/robert/code/ispf-editor/crates/ispf-core/tests/buffer_tests.rs`
 
 - [ ] **Step 1: Write the failing buffer tests**
@@ -279,7 +282,7 @@ fn loads_and_saves_a_real_file() {
 
 - [ ] **Step 2: Run the core buffer test file and confirm it fails**
 
-Run: `cargo test -p ispf-core --test buffer_tests`
+Run: `. "$HOME/.cargo/env" && cargo test -p ispf-core --test buffer_tests`
 Expected: FAIL because `ispf_core` and `EditBuffer` are not implemented yet
 
 - [ ] **Step 3: Implement the core buffer types**
@@ -317,13 +320,27 @@ impl Record {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct EditBuffer {
     records: Vec<Record>,
     dirty: bool,
     next_id: u64,
     file_path: Option<std::path::PathBuf>,
     newline: &'static str,
+    trailing_newline: bool,
+}
+
+impl Default for EditBuffer {
+    fn default() -> Self {
+        Self {
+            records: Vec::new(),
+            dirty: false,
+            next_id: 1,
+            file_path: None,
+            newline: "\n",
+            trailing_newline: false,
+        }
+    }
 }
 
 impl EditBuffer {
@@ -340,15 +357,21 @@ impl EditBuffer {
         }
         Self {
             records,
-            dirty: false,
             next_id,
-            file_path: None,
-            newline: "\n",
+            newline: detect_newline(input),
+            trailing_newline: input.ends_with('\n'),
+            ..Self::default()
         }
     }
 
     pub fn from_path(path: &std::path::Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
+        if has_mixed_newlines(&text) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "mixed newline styles are not supported",
+            ));
+        }
         let mut buffer = Self::from_text(&text);
         buffer.file_path = Some(path.to_path_buf());
         Ok(buffer)
@@ -382,7 +405,9 @@ impl EditBuffer {
             .map(|record| record.text.as_str())
             .collect::<Vec<_>>()
             .join(self.newline);
-        out.push_str(self.newline);
+        if self.trailing_newline {
+            out.push_str(self.newline);
+        }
         out
     }
 
@@ -393,7 +418,12 @@ impl EditBuffer {
             excluded: false,
         };
         self.next_id += 1;
-        self.records.insert(index + 1, record);
+        let insert_at = if self.records.is_empty() {
+            0
+        } else {
+            index.saturating_add(1).min(self.records.len())
+        };
+        self.records.insert(insert_at, record);
         self.dirty = true;
     }
 
@@ -407,17 +437,82 @@ impl EditBuffer {
 
     pub fn set_excluded(&mut self, index: usize, excluded: bool) -> Option<()> {
         let record = self.records.get_mut(index)?;
+        if record.excluded == excluded {
+            return Some(());
+        }
         record.excluded = excluded;
         self.dirty = true;
         Some(())
     }
 }
+
+fn detect_newline(input: &str) -> &'static str {
+    if input.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    }
+}
+
+fn has_mixed_newlines(input: &str) -> bool {
+    input.contains("\r\n") && input.replace("\r\n", "").contains('\n')
+}
+```
+
+Create minimal stubs so the planned `lib.rs` compiles before Task 3 expands them:
+
+`/Users/robert/code/ispf-editor/crates/ispf-core/src/profile.rs`
+
+```rust
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CapsMode {
+    Off,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct EditProfile;
+```
+
+`/Users/robert/code/ispf-editor/crates/ispf-core/src/session.rs`
+
+```rust
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ActiveArea {
+    DataArea,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct ViewState;
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct SessionMessage;
+
+#[derive(Debug, Default)]
+pub struct EditorSession;
+```
+
+`/Users/robert/code/ispf-editor/crates/ispf-core/src/undo.rs`
+
+```rust
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum UndoEntry {}
+
+#[derive(Debug, Default)]
+pub struct UndoStack;
 ```
 
 - [ ] **Step 4: Re-run the buffer tests**
 
-Run: `cargo test -p ispf-core --test buffer_tests`
+Run: `. "$HOME/.cargo/env" && cargo test -p ispf-core --test buffer_tests`
 Expected: PASS for all four tests
+
+Post-review hardening for this task is allowed and expected:
+
+- preserve CRLF and missing trailing newline on no-op save
+- reject mixed newline styles explicitly instead of silently rewriting them
+- make `insert_after` safe for empty and out-of-range indexes
+- keep `EditBuffer::default()` valid
+- add focused edge-case tests for these behaviors
 
 - [ ] **Step 5: Commit the buffer foundation**
 
