@@ -63,6 +63,7 @@
 **Files:**
 - Create: `/Users/robert/code/ispf-editor/Cargo.toml`
 - Create: `/Users/robert/code/ispf-editor/.gitignore`
+- Create: `/Users/robert/code/ispf-editor/Cargo.lock`
 - Create: `/Users/robert/code/ispf-editor/rust-toolchain.toml`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-core/Cargo.toml`
 - Create: `/Users/robert/code/ispf-editor/crates/ispf-core/src/lib.rs`
@@ -210,13 +211,13 @@ fn main() {}
 
 - [ ] **Step 6: Run Cargo metadata to verify the workspace resolves**
 
-Run: `cargo metadata --no-deps`
+Run: `cargo metadata --format-version 1 --no-deps`
 Expected: command exits `0` and lists the four workspace packages
 
 - [ ] **Step 7: Commit the workspace scaffold**
 
 ```bash
-git add Cargo.toml .gitignore rust-toolchain.toml crates
+git add Cargo.toml Cargo.lock .gitignore rust-toolchain.toml crates
 git commit -m "chore: scaffold Rust workspace"
 ```
 
