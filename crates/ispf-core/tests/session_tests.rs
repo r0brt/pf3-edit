@@ -5,11 +5,15 @@ use ispf_core::{
 #[test]
 fn new_session_starts_in_data_area() {
     let buffer = EditBuffer::from_text("A\n").unwrap();
-    let mut session = EditorSession::new(buffer);
+    let session = EditorSession::new(buffer);
+    assert_eq!(session.view().cursor_row, 0);
+    assert_eq!(session.view().cursor_col, 0);
+    assert_eq!(session.view().top_row, 0);
+    assert_eq!(session.view().left_col, 0);
     assert_eq!(session.view().active_area, ActiveArea::DataArea);
     assert_eq!(session.buffer().to_text(), "A\n");
     assert_eq!(session.message(), None);
-    assert_eq!(session.undo_mut().pop(), None);
+    assert!(!session.can_undo());
 }
 
 #[test]

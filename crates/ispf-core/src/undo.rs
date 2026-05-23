@@ -12,6 +12,10 @@ pub struct UndoStack {
 }
 
 impl UndoStack {
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
     pub fn push(&mut self, entry: UndoEntry) {
         self.entries.push(entry);
     }

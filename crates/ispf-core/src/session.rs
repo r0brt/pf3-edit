@@ -59,8 +59,8 @@ impl EditorSession {
         &self.profile
     }
 
-    pub fn undo_mut(&mut self) -> &mut UndoStack {
-        &mut self.undo
+    pub fn can_undo(&self) -> bool {
+        !self.undo.is_empty()
     }
 
     pub fn message(&self) -> Option<&SessionMessage> {
