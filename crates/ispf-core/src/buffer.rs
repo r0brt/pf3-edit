@@ -60,6 +60,7 @@ impl EditBuffer {
 
     pub fn from_path(path: &std::path::Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
+        validate_single_newline_style(&text)?;
         let mut buffer = Self::from_text(&text);
         buffer.file_path = Some(path.to_path_buf());
         Ok(buffer)
@@ -139,4 +140,42 @@ fn detect_newline(input: &str) -> &'static str {
     } else {
         "\n"
     }
+}
+
+fn validate_single_newline_style(input: &str) -> std::io::Result<()> {
+    let bytes = input.as_bytes();
+    let mut saw_lf = false;
+    let mut saw_crlf = false;
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match bytes[index] {
+            b'\r' => {
+                if bytes.get(index + 1) != Some(&b'\n') {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "unsupported carriage return newline in text file",
+                    ));
+                }
+                saw_crlf = true;
+                index += 2;
+            }
+            b'\n' => {
+                saw_lf = true;
+                index += 1;
+            }
+            _ => {
+                index += 1;
+            }
+        }
+
+        if saw_lf && saw_crlf {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "mixed newline styles are not supported",
+            ));
+        }
+    }
+
+    Ok(())
 }

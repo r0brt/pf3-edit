@@ -1,4 +1,16 @@
 use ispf_core::{EditBuffer, Record};
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static NEXT_TEMP_ID: AtomicUsize = AtomicUsize::new(1);
+
+fn unique_temp_path(name: &str) -> PathBuf {
+    let id = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
+    std::env::temp_dir().join(format!(
+        "ispf-{name}-{}-{id}.txt",
+        std::process::id()
+    ))
+}
 
 #[test]
 fn loads_records_from_text_preserving_order() {
@@ -29,8 +41,7 @@ fn exclude_marks_line_without_removing_record() {
 
 #[test]
 fn loads_and_saves_a_real_file() {
-    let dir = std::env::temp_dir();
-    let path = dir.join("ispf-buffer-roundtrip.txt");
+    let path = unique_temp_path("buffer-roundtrip");
     std::fs::write(&path, "LINE1\nLINE2\n").unwrap();
 
     let mut buffer = EditBuffer::from_path(&path).unwrap();
@@ -43,8 +54,7 @@ fn loads_and_saves_a_real_file() {
 
 #[test]
 fn preserves_crlf_and_trailing_newline_on_round_trip_save() {
-    let dir = std::env::temp_dir();
-    let path = dir.join("ispf-buffer-crlf-roundtrip.txt");
+    let path = unique_temp_path("buffer-crlf-roundtrip");
     std::fs::write(&path, "LINE1\r\nLINE2\r\n").unwrap();
 
     let mut buffer = EditBuffer::from_path(&path).unwrap();
@@ -56,8 +66,7 @@ fn preserves_crlf_and_trailing_newline_on_round_trip_save() {
 
 #[test]
 fn preserves_missing_trailing_newline_on_round_trip_save() {
-    let dir = std::env::temp_dir();
-    let path = dir.join("ispf-buffer-no-trailing-newline.txt");
+    let path = unique_temp_path("buffer-no-trailing-newline");
     std::fs::write(&path, "LINE1\nLINE2").unwrap();
 
     let mut buffer = EditBuffer::from_path(&path).unwrap();
@@ -96,4 +105,18 @@ fn unchanged_excluded_value_does_not_mark_buffer_dirty() {
 
     assert!(!buffer.is_dirty());
     assert!(!buffer.records()[1].excluded);
+}
+
+#[test]
+fn rejects_mixed_newline_files() {
+    let path = unique_temp_path("buffer-mixed-newlines");
+    std::fs::write(&path, "LINE1\r\nLINE2\nLINE3\r\n").unwrap();
+
+    let error = EditBuffer::from_path(&path).unwrap_err();
+
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert!(
+        error.to_string().contains("mixed newline"),
+        "unexpected error: {error}"
+    );
 }
