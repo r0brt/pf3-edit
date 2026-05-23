@@ -14,14 +14,14 @@ fn unique_temp_path(name: &str) -> PathBuf {
 
 #[test]
 fn loads_records_from_text_preserving_order() {
-    let buffer = EditBuffer::from_text("ONE\nTWO\nTHREE\n");
+    let buffer = EditBuffer::from_text("ONE\nTWO\nTHREE\n").unwrap();
     let texts: Vec<&str> = buffer.records().iter().map(Record::text).collect();
     assert_eq!(texts, vec!["ONE", "TWO", "THREE"]);
 }
 
 #[test]
 fn insert_and_delete_update_dirty_state() {
-    let mut buffer = EditBuffer::from_text("ALPHA\nBETA\n");
+    let mut buffer = EditBuffer::from_text("ALPHA\nBETA\n").unwrap();
     assert!(!buffer.is_dirty());
 
     buffer.insert_after(0, "GAMMA");
@@ -34,7 +34,7 @@ fn insert_and_delete_update_dirty_state() {
 
 #[test]
 fn exclude_marks_line_without_removing_record() {
-    let mut buffer = EditBuffer::from_text("A\nB\n");
+    let mut buffer = EditBuffer::from_text("A\nB\n").unwrap();
     buffer.set_excluded(1, true).unwrap();
     assert!(buffer.records()[1].excluded);
 }
@@ -89,7 +89,7 @@ fn insert_after_empty_buffer_inserts_first_record() {
 
 #[test]
 fn insert_after_out_of_range_appends_record() {
-    let mut buffer = EditBuffer::from_text("ONE\nTWO\n");
+    let mut buffer = EditBuffer::from_text("ONE\nTWO\n").unwrap();
     buffer.insert_after(99, "THREE");
 
     let texts: Vec<&str> = buffer.records().iter().map(Record::text).collect();
@@ -98,7 +98,7 @@ fn insert_after_out_of_range_appends_record() {
 
 #[test]
 fn unchanged_excluded_value_does_not_mark_buffer_dirty() {
-    let mut buffer = EditBuffer::from_text("A\nB\n");
+    let mut buffer = EditBuffer::from_text("A\nB\n").unwrap();
     assert!(!buffer.is_dirty());
 
     buffer.set_excluded(1, false).unwrap();
@@ -123,19 +123,10 @@ fn rejects_mixed_newline_files() {
 
 #[test]
 fn rejects_mixed_newlines_from_text() {
-    let panic = std::panic::catch_unwind(|| EditBuffer::from_text("LINE1\r\nLINE2\nLINE3\r\n"))
-        .expect_err("mixed newline input should be rejected");
-
-    let message = if let Some(message) = panic.downcast_ref::<String>() {
-        message.as_str()
-    } else if let Some(message) = panic.downcast_ref::<&str>() {
-        message
-    } else {
-        panic!("unexpected panic payload");
-    };
+    let error = EditBuffer::try_from_text("LINE1\r\nLINE2\nLINE3\r\n").unwrap_err();
 
     assert!(
-        message.contains("mixed newline"),
-        "unexpected panic: {message}"
+        error.to_string().contains("mixed newline"),
+        "unexpected error: {error}"
     );
 }

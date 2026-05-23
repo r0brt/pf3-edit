@@ -38,9 +38,12 @@ impl Default for EditBuffer {
 }
 
 impl EditBuffer {
-    pub fn from_text(input: &str) -> Self {
-        validate_single_newline_style(input)
-            .expect("mixed newline input is not supported for EditBuffer::from_text");
+    pub fn from_text(input: &str) -> std::io::Result<Self> {
+        Self::try_from_text(input)
+    }
+
+    pub fn try_from_text(input: &str) -> std::io::Result<Self> {
+        validate_single_newline_style(input)?;
         let mut next_id = 1;
         let mut records = Vec::new();
         for line in input.lines() {
@@ -51,19 +54,18 @@ impl EditBuffer {
             });
             next_id += 1;
         }
-        Self {
+        Ok(Self {
             records,
             next_id,
             newline: detect_newline(input),
             trailing_newline: input.ends_with('\n'),
             ..Self::default()
-        }
+        })
     }
 
     pub fn from_path(path: &std::path::Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
-        validate_single_newline_style(&text)?;
-        let mut buffer = Self::from_text(&text);
+        let mut buffer = Self::try_from_text(&text)?;
         buffer.file_path = Some(path.to_path_buf());
         Ok(buffer)
     }
