@@ -14,13 +14,27 @@ impl Record {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct EditBuffer {
     records: Vec<Record>,
     dirty: bool,
     next_id: u64,
     file_path: Option<std::path::PathBuf>,
     newline: &'static str,
+    trailing_newline: bool,
+}
+
+impl Default for EditBuffer {
+    fn default() -> Self {
+        Self {
+            records: Vec::new(),
+            dirty: false,
+            next_id: 1,
+            file_path: None,
+            newline: "\n",
+            trailing_newline: false,
+        }
+    }
 }
 
 impl EditBuffer {
@@ -37,10 +51,10 @@ impl EditBuffer {
         }
         Self {
             records,
-            dirty: false,
             next_id,
-            file_path: None,
-            newline: "\n",
+            newline: detect_newline(input),
+            trailing_newline: input.ends_with('\n'),
+            ..Self::default()
         }
     }
 
@@ -78,7 +92,9 @@ impl EditBuffer {
             .map(|record| record.text.as_str())
             .collect::<Vec<_>>()
             .join(self.newline);
-        out.push_str(self.newline);
+        if self.trailing_newline {
+            out.push_str(self.newline);
+        }
         out
     }
 
@@ -89,7 +105,12 @@ impl EditBuffer {
             excluded: false,
         };
         self.next_id += 1;
-        self.records.insert(index + 1, record);
+        let insert_at = if self.records.is_empty() {
+            0
+        } else {
+            index.saturating_add(1).min(self.records.len())
+        };
+        self.records.insert(insert_at, record);
         self.dirty = true;
     }
 
@@ -103,8 +124,19 @@ impl EditBuffer {
 
     pub fn set_excluded(&mut self, index: usize, excluded: bool) -> Option<()> {
         let record = self.records.get_mut(index)?;
+        if record.excluded == excluded {
+            return Some(());
+        }
         record.excluded = excluded;
         self.dirty = true;
         Some(())
+    }
+}
+
+fn detect_newline(input: &str) -> &'static str {
+    if input.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
     }
 }
