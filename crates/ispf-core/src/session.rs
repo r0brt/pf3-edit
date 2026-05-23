@@ -51,7 +51,19 @@ impl EditorSession {
         &self.view
     }
 
+    pub fn buffer(&self) -> &EditBuffer {
+        &self.buffer
+    }
+
     pub fn profile(&self) -> &EditProfile {
         &self.profile
+    }
+
+    pub fn undo_mut(&mut self) -> &mut UndoStack {
+        &mut self.undo
+    }
+
+    pub fn message(&self) -> Option<&SessionMessage> {
+        self.message.as_ref()
     }
 }
