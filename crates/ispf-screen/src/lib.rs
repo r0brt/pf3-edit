@@ -1,1 +1,3 @@
-//! Screen model stub for workspace validation.
+mod render;
+
+pub use render::{render_screen, ScreenModel, ScreenRow};
