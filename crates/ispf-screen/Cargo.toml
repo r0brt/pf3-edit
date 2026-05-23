@@ -1,0 +1,12 @@
+[package]
+name = "ispf-screen"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+ispf-core = { path = "../ispf-core" }
+unicode-width.workspace = true
+
+[dev-dependencies]
+insta.workspace = true

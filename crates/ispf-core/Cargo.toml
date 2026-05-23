@@ -1,0 +1,10 @@
+[package]
+name = "ispf-core"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+unicode-width.workspace = true

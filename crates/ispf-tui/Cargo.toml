@@ -1,0 +1,13 @@
+[package]
+name = "ispf-tui"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+crossterm.workspace = true
+ispf-command = { path = "../ispf-command" }
+ispf-core = { path = "../ispf-core" }
+ispf-screen = { path = "../ispf-screen" }
+ratatui.workspace = true
