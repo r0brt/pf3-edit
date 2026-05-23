@@ -104,17 +104,22 @@ impl EditBuffer {
     }
 
     pub fn insert_after(&mut self, index: usize, text: &str) {
+        let insert_at = if self.records.is_empty() {
+            0
+        } else {
+            index.saturating_add(1).min(self.records.len())
+        };
+        self.insert_at(insert_at, text);
+    }
+
+    pub(crate) fn insert_at(&mut self, index: usize, text: &str) {
         let record = Record {
             id: RecordId(self.next_id),
             text: text.to_string(),
             excluded: false,
         };
         self.next_id += 1;
-        let insert_at = if self.records.is_empty() {
-            0
-        } else {
-            index.saturating_add(1).min(self.records.len())
-        };
+        let insert_at = index.min(self.records.len());
         self.records.insert(insert_at, record);
         self.dirty = true;
     }

@@ -1,6 +1,7 @@
 use ispf_core::{
     ActiveArea, CapsMode, EditBuffer, EditProfile, EditorSession, UndoEntry, UndoStack,
 };
+use ispf_command::{PrefixCommand, PrimaryCommand};
 
 #[test]
 fn new_session_starts_in_data_area() {
@@ -43,4 +44,25 @@ fn undo_stack_pops_last_entry_first() {
     );
     assert_eq!(stack.pop(), Some(UndoEntry::InsertedLine { index: 1 }));
     assert_eq!(stack.pop(), None);
+}
+
+#[test]
+fn execute_primary_scrolls_and_toggles_profile() {
+    let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_primary(PrimaryCommand::Down(2)).unwrap();
+    assert_eq!(session.view().top_row, 2);
+
+    session.execute_primary(PrimaryCommand::Number(true)).unwrap();
+    assert!(session.profile().number_mode);
+}
+
+#[test]
+fn execute_prefix_delete_removes_the_target_line() {
+    let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(1, PrefixCommand::Delete).unwrap();
+    assert_eq!(session.buffer().records()[1].text(), "C");
 }

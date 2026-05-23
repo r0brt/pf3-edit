@@ -271,6 +271,7 @@ name = "ispf-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ispf-command",
  "thiserror",
  "unicode-width 0.2.0",
 ]
