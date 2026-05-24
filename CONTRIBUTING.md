@@ -15,6 +15,11 @@
 - Small hotfixes may go directly to `main` when they are obviously isolated.
 - Keep commits thematic. One commit should tell one story.
 - Do not mix unrelated refactors with feature work unless the refactor is required to make the feature safe or clear.
+- Keep `main` releasable. Merge back only after tests, clippy, and a short self-review pass.
+- Prefer short-lived feature branches over long-running branches.
+- Default merge rule: use squash merge when a branch contains several small implementation commits for one feature story.
+- Preserve branch history only when the commits are already clean, semantically separated, and worth keeping individually.
+- Delete or close feature branches after integration so the active branch list stays small.
 
 Recommended branch naming:
 
