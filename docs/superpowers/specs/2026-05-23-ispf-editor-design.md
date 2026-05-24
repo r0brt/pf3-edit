@@ -38,6 +38,13 @@ Implemented highlights:
 - working line commands including `I`, `In`, `D`, `Dn`, `DD`, `R`, `Rn`, `RR`, `C`, `Cn`, `CC`, `M`, `Mn`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, and `UCC`
 - direct data-area editing with overwrite behavior, delete, join, split, line feed, undo, and stronger bounds-aware cursor/edit behavior
 - visible `=COLS>` and `=BNDS>` support
+- overlay support through `O` and `OO`
+
+Current focus for the next `v1.0`-oriented block:
+
+- render excluded ranges as visible placeholder rows instead of dropping them entirely from the screen model
+- support local `S` behavior on an excluded placeholder row to reveal only that excluded block
+- keep `RESET` as the global "show everything again" command
 
 Still intentionally outside the implemented scope:
 

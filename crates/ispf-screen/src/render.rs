@@ -8,6 +8,7 @@ pub struct ScreenRow {
     pub line_number: String,
     pub prefix: String,
     pub text: String,
+    pub is_excluded_placeholder: bool,
     pub prefix_selected: bool,
     pub text_selected: bool,
     pub text_cursor_col: Option<usize>,
@@ -37,48 +38,42 @@ pub struct ScreenModel {
 pub fn render_screen(session: &EditorSession, _width: u16, height: u16) -> ScreenModel {
     let show_top_banner = session.view().top_row == 0;
     let body_rows = height.saturating_sub(6) as usize;
-    let visible_records: Vec<(usize, _)> = session
-        .buffer()
-        .records()
-        .iter()
-        .enumerate()
-        .skip(session.view().top_row)
-        .filter(|(_, record)| !record.excluded)
-        .collect();
-    let show_bottom_banner = visible_records.len() + usize::from(show_top_banner) < body_rows;
+    let visible_entries = collect_visible_entries(session);
+    let show_bottom_banner = visible_entries.len() + usize::from(show_top_banner) < body_rows;
     let visible_rows = body_rows
         .saturating_sub(usize::from(show_top_banner))
         .saturating_sub(usize::from(show_bottom_banner));
-    let rows = visible_records
+    let rows = visible_entries
         .into_iter()
         .take(visible_rows)
-        .map(|(index, record)| {
-            let is_cursor_row = index == session.view().cursor_row;
+        .map(|entry| {
+            let is_cursor_row = session.view().cursor_row >= entry.start_index
+                && session.view().cursor_row <= entry.end_index;
             let prefix_selected =
                 is_cursor_row && session.view().active_area == ActiveArea::LineCommandArea;
             let text_selected = is_cursor_row && session.view().active_area == ActiveArea::DataArea;
 
             ScreenRow {
-                record_index: index,
+                record_index: entry.start_index,
                 line_number: if session.profile().number_mode {
-                    format!("{:06}", index + 1)
+                    format!("{:06}", entry.start_index + 1)
                 } else {
                     String::new()
                 },
                 prefix: String::new(),
-                text: record
-                    .text
-                    .chars()
-                    .skip(session.view().left_col)
-                    .collect(),
+                text: entry.text,
+                is_excluded_placeholder: entry.is_excluded_placeholder,
                 prefix_selected,
                 text_selected,
-                text_cursor_col: text_selected.then_some(
-                    session
-                        .view()
-                        .cursor_col
-                        .saturating_sub(session.view().left_col),
-                ),
+                text_cursor_col: text_selected
+                    .then_some(if entry.is_excluded_placeholder {
+                        0
+                    } else {
+                        session
+                            .view()
+                            .cursor_col
+                            .saturating_sub(session.view().left_col)
+                    }),
             }
         })
         .collect();
@@ -114,6 +109,70 @@ pub fn render_screen(session: &EditorSession, _width: u16, height: u16) -> Scree
             "F8=Down  F9=Swap  F10=Left  F11=Right  F12=Cancel".into(),
         ],
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct VisibleEntry {
+    start_index: usize,
+    end_index: usize,
+    text: String,
+    is_excluded_placeholder: bool,
+}
+
+fn collect_visible_entries(session: &EditorSession) -> Vec<VisibleEntry> {
+    let records = session.buffer().records();
+    let mut entries = Vec::new();
+    let mut index = normalize_visible_start(records, session.view().top_row);
+
+    while index < records.len() {
+        let record = &records[index];
+        if record.excluded {
+            let mut end = index;
+            while end + 1 < records.len() && records[end + 1].excluded {
+                end += 1;
+            }
+            entries.push(VisibleEntry {
+                start_index: index,
+                end_index: end,
+                text: match end - index + 1 {
+                    1 => "1 line excluded".into(),
+                    count => format!("{count} lines excluded"),
+                },
+                is_excluded_placeholder: true,
+            });
+            index = end + 1;
+        } else {
+            entries.push(VisibleEntry {
+                start_index: index,
+                end_index: index,
+                text: record
+                    .text
+                    .chars()
+                    .skip(session.view().left_col)
+                    .collect(),
+                is_excluded_placeholder: false,
+            });
+            index += 1;
+        }
+    }
+
+    entries
+}
+
+fn normalize_visible_start(records: &[ispf_core::Record], start: usize) -> usize {
+    if start >= records.len() {
+        return records.len();
+    }
+
+    if !records[start].excluded {
+        return start;
+    }
+
+    let mut normalized = start;
+    while normalized > 0 && records[normalized - 1].excluded {
+        normalized -= 1;
+    }
+    normalized
 }
 
 fn title_for_session(session: &EditorSession) -> String {

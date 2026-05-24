@@ -11,6 +11,7 @@ pub enum PrefixCommand {
     MoveBlock,
     Overlay,
     OverlayBlock,
+    Show,
     Lowercase(usize),
     LowercaseBlock,
     Uppercase(usize),
@@ -34,6 +35,7 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
         "A" => Ok(PrefixCommand::After),
         "B" => Ok(PrefixCommand::Before),
         "O" => Ok(PrefixCommand::Overlay),
+        "S" => Ok(PrefixCommand::Show),
         "X" => Ok(PrefixCommand::Exclude),
         other if matches_multi_letter_counted_line_command(other, "LC") => {
             Ok(PrefixCommand::Lowercase(parse_multi_letter_count(other, 2)))

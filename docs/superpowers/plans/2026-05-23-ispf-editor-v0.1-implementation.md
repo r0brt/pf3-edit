@@ -2,6 +2,12 @@
 
 Status note as of 2026-05-25: this file is now mainly historical. The project has implemented the original workspace/core/TUI plan and moved beyond the first `v0.1` slice with additional command coverage, richer data-area editing, visible `COLS`/`BOUNDS`, stronger bounds-aware behavior, and overlay support through `O/OO`.
 
+Current active follow-up block:
+
+- improve the excluded-line screen model so contiguous excluded ranges render as visible placeholder rows
+- add local `S` behavior against those placeholder rows
+- preserve `RESET` as the global unexclude command
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a Rust workspace for a local ISPF-inspired editor with a reusable core, a thin TUI, and a working `v0.1` feature slice for single-file editing.

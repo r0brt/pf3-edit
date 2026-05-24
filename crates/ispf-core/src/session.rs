@@ -110,7 +110,9 @@ impl EditorSession {
     }
 
     pub fn move_cursor_up(&mut self) {
-        self.view.cursor_row = self.view.cursor_row.saturating_sub(1);
+        self.view.cursor_row = self
+            .previous_navigable_row(self.view.cursor_row)
+            .unwrap_or(self.view.cursor_row);
         self.clamp_cursor_col();
         if self.view.cursor_row < self.view.top_row {
             self.view.top_row = self.view.cursor_row;
@@ -122,8 +124,9 @@ impl EditorSession {
             self.view.cursor_row = 0;
             return;
         }
-        let max_row = self.buffer.records().len().saturating_sub(1);
-        self.view.cursor_row = (self.view.cursor_row + 1).min(max_row);
+        self.view.cursor_row = self
+            .next_navigable_row(self.view.cursor_row)
+            .unwrap_or(self.view.cursor_row);
         self.clamp_cursor_col();
     }
 
@@ -288,8 +291,8 @@ impl EditorSession {
                         is_error: true,
                     });
                 } else {
-                    self.view.cursor_row = row;
-                    self.view.top_row = row;
+                    self.view.cursor_row = self.navigable_row_start(row);
+                    self.view.top_row = self.view.cursor_row;
                     self.clamp_cursor_col();
                     self.message = Some(SessionMessage {
                         text: "LOCATE completed".into(),
@@ -574,6 +577,26 @@ impl EditorSession {
                 });
                 self.try_complete_pending_transfer()?;
             }
+            PrefixCommand::Show => {
+                let (start, end) = self
+                    .excluded_block_range_at(row)
+                    .ok_or_else(|| "S requires an excluded block".to_string())?;
+                for index in start..=end {
+                    self.buffer
+                        .set_excluded(index, false)
+                        .ok_or_else(|| "invalid row".to_string())?;
+                }
+                self.view.cursor_row = start;
+                self.view.top_row = self.view.top_row.min(start);
+                self.clamp_cursor_col();
+                self.message = Some(SessionMessage {
+                    text: match end - start + 1 {
+                        1 => "1 line shown".into(),
+                        count => format!("{count} lines shown"),
+                    },
+                    is_error: false,
+                });
+            }
             PrefixCommand::Exclude => {
                 let previous = self
                     .buffer
@@ -631,6 +654,9 @@ impl EditorSession {
     }
 
     pub fn insert_char(&mut self, ch: char) -> Result<(), String> {
+        if self.current_row_is_excluded() {
+            return Err("Cannot edit excluded lines".into());
+        }
         let (_, bounds_end) = self.edit_bounds();
         if self.view.cursor_col > bounds_end {
             return Ok(());
@@ -657,6 +683,9 @@ impl EditorSession {
     }
 
     pub fn backspace_char(&mut self) -> Result<(), String> {
+        if self.current_row_is_excluded() {
+            return Err("Cannot edit excluded lines".into());
+        }
         if self.view.cursor_col == 0 {
             let row = self.view.cursor_row;
             if row == 0 {
@@ -711,6 +740,9 @@ impl EditorSession {
     }
 
     pub fn delete_char(&mut self) -> Result<(), String> {
+        if self.current_row_is_excluded() {
+            return Err("Cannot edit excluded lines".into());
+        }
         let row = self.view.cursor_row;
         let current = self
             .buffer
@@ -754,6 +786,9 @@ impl EditorSession {
     }
 
     pub fn split_line_at_cursor(&mut self) -> Result<(), String> {
+        if self.current_row_is_excluded() {
+            return Err("Cannot edit excluded lines".into());
+        }
         let row = self.view.cursor_row;
         let current = self
             .buffer
@@ -857,6 +892,13 @@ impl EditorSession {
         self.exit_disposition
     }
 
+    pub fn row_is_excluded(&self, row: usize) -> bool {
+        self.buffer
+            .records()
+            .get(row)
+            .is_some_and(|record| record.excluded)
+    }
+
     fn undo_last(&mut self) -> Result<(), String> {
         match self.undo.pop() {
             Some(UndoEntry::DeletedLine { index, record }) => {
@@ -904,6 +946,9 @@ impl EditorSession {
     }
 
     fn current_line_char_len(&self) -> usize {
+        if self.current_row_is_excluded() {
+            return 0;
+        }
         self.buffer
             .records()
             .get(self.view.cursor_row)
@@ -970,6 +1015,67 @@ impl EditorSession {
         }
         self.view.top_row = self.view.top_row.min(self.view.cursor_row);
         self.clamp_cursor_col();
+    }
+
+    fn current_row_is_excluded(&self) -> bool {
+        self.buffer
+            .records()
+            .get(self.view.cursor_row)
+            .is_some_and(|record| record.excluded)
+    }
+
+    fn navigable_row_start(&self, row: usize) -> usize {
+        self.excluded_block_start_for(row).unwrap_or(row)
+    }
+
+    fn next_navigable_row(&self, row: usize) -> Option<usize> {
+        let start = self.navigable_row_start(row).saturating_add(1);
+        (start..self.buffer.records().len()).find(|&index| self.is_navigable_row(index))
+    }
+
+    fn previous_navigable_row(&self, row: usize) -> Option<usize> {
+        let current = self.navigable_row_start(row);
+        (0..current).rev().find(|&index| self.is_navigable_row(index))
+    }
+
+    fn is_navigable_row(&self, row: usize) -> bool {
+        let Some(record) = self.buffer.records().get(row) else {
+            return false;
+        };
+
+        if !record.excluded {
+            return true;
+        }
+
+        row == 0
+            || self
+                .buffer
+                .records()
+                .get(row - 1)
+                .is_some_and(|previous| !previous.excluded)
+    }
+
+    fn excluded_block_start_for(&self, row: usize) -> Option<usize> {
+        let records = self.buffer.records();
+        if !records.get(row)?.excluded {
+            return None;
+        }
+
+        let mut start = row;
+        while start > 0 && records[start - 1].excluded {
+            start -= 1;
+        }
+        Some(start)
+    }
+
+    fn excluded_block_range_at(&self, row: usize) -> Option<(usize, usize)> {
+        let records = self.buffer.records();
+        let start = self.excluded_block_start_for(row)?;
+        let mut end = start;
+        while end + 1 < records.len() && records[end + 1].excluded {
+            end += 1;
+        }
+        Some((start, end))
     }
 
     fn find_visible_from(&self, start: usize) -> Option<usize> {

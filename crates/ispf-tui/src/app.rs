@@ -59,7 +59,7 @@ impl App {
         match action {
             AppAction::Help => {
                 self.ui_message = Some(
-                    "Line cmds: D/Dn/DD Delete, I/In Insert, R/Rn/RR Repeat, C/CC/M/MM Copy/Move, A/B/O/OO Destination, LC/UC/LCC/UCC Case, X/XX Exclude | PF3 Save+Exit | PF5 RFind | PF6 RChange | PF12 Cancel".into(),
+                    "Line cmds: D/Dn/DD Delete, I/In Insert, R/Rn/RR Repeat, C/CC/M/MM Copy/Move, A/B/O/OO Destination, LC/UC/LCC/UCC Case, X/XX Exclude, S Show | PF3 Save+Exit | PF5 RFind | PF6 RChange | PF12 Cancel".into(),
                 );
             }
             AppAction::ExitSave => {
@@ -134,15 +134,21 @@ impl App {
             }
             AppAction::Delete => {
                 if self.session.view().active_area == ActiveArea::DataArea {
-                    self.session.delete_char().map_err(anyhow::Error::msg)?;
-                    self.ui_message = None;
+                    match self.session.delete_char() {
+                        Ok(()) => self.ui_message = None,
+                        Err(err) => self.ui_message = Some(err),
+                    }
                 }
             }
             AppAction::LineFeed => {
                 if self.session.view().active_area == ActiveArea::DataArea {
                     let row = self.session.view().cursor_row;
-                    self.session.insert_blank_line_after(row);
-                    self.ui_message = None;
+                    if self.session.row_is_excluded(row) {
+                        self.ui_message = Some("Cannot edit excluded lines".into());
+                    } else {
+                        self.session.insert_blank_line_after(row);
+                        self.ui_message = None;
+                    }
                 }
             }
             AppAction::Cancel => self.execute_primary_command(PrimaryCommand::Cancel)?,
@@ -210,22 +216,26 @@ impl App {
             ActiveArea::DataArea => {
                 match key.code {
                     KeyCode::Char(ch) => {
-                        self.session.insert_char(ch).map_err(anyhow::Error::msg)?;
-                        self.ui_message = None;
+                        match self.session.insert_char(ch) {
+                            Ok(()) => self.ui_message = None,
+                            Err(err) => self.ui_message = Some(err),
+                        }
                         self.sync_session_state();
                         Ok(())
                     }
                     KeyCode::Backspace => {
-                        self.session.backspace_char().map_err(anyhow::Error::msg)?;
-                        self.ui_message = None;
+                        match self.session.backspace_char() {
+                            Ok(()) => self.ui_message = None,
+                            Err(err) => self.ui_message = Some(err),
+                        }
                         self.sync_session_state();
                         Ok(())
                     }
                     KeyCode::Enter => {
-                        self.session
-                            .split_line_at_cursor()
-                            .map_err(anyhow::Error::msg)?;
-                        self.ui_message = None;
+                        match self.session.split_line_at_cursor() {
+                            Ok(()) => self.ui_message = None,
+                            Err(err) => self.ui_message = Some(err),
+                        }
                         self.sync_session_state();
                         Ok(())
                     }
@@ -528,7 +538,18 @@ fn line_command_field_spans(row: &ispf_screen::ScreenRow) -> Vec<Span<'static>> 
 fn data_row_line(row: &ispf_screen::ScreenRow) -> Line<'static> {
     let mut spans = line_command_field_spans(row);
     spans.push(Span::styled(" ".to_string(), data_text_style()));
-    spans.extend(data_spans(&row.text, row.text_selected, row.text_cursor_col));
+    if row.is_excluded_placeholder {
+        spans.push(Span::styled(
+            row.text.clone(),
+            if row.text_selected {
+                active_field_style()
+            } else {
+                menu_style()
+            },
+        ));
+    } else {
+        spans.extend(data_spans(&row.text, row.text_selected, row.text_cursor_col));
+    }
 
     Line::from(spans)
 }
@@ -1166,8 +1187,9 @@ mod tests {
 
         let screen = app.screen_model(80, 24);
         assert_eq!(app.session().view().cursor_row, 1);
-        assert_eq!(screen.rows[0].text, "B");
-        assert!(screen.rows[0].prefix_selected);
+        assert_eq!(screen.rows[0].text, "1 line excluded");
+        assert_eq!(screen.rows[1].text, "B");
+        assert!(screen.rows[1].prefix_selected);
         assert_eq!(screen.message, "Line excluded");
     }
 
@@ -1182,10 +1204,12 @@ mod tests {
         app.handle_key(KeyEvent::from(KeyCode::Char('d'))).unwrap();
 
         let screen = app.screen_model(80, 24);
-        assert_eq!(screen.rows[0].text, "B");
-        assert_eq!(screen.rows[0].prefix.trim(), "D");
-        assert_eq!(screen.rows[1].text, "C");
-        assert_eq!(screen.rows[1].prefix.trim(), "");
+        assert_eq!(screen.rows[0].text, "1 line excluded");
+        assert_eq!(screen.rows[0].prefix.trim(), "");
+        assert_eq!(screen.rows[1].text, "B");
+        assert_eq!(screen.rows[1].prefix.trim(), "D");
+        assert_eq!(screen.rows[2].text, "C");
+        assert_eq!(screen.rows[2].prefix.trim(), "");
     }
 
     #[test]
@@ -1209,8 +1233,9 @@ mod tests {
         app.handle_action(AppAction::Execute).unwrap();
 
         let screen = app.screen_model(80, 24);
-        assert_eq!(screen.rows[0].text, "D");
+        assert_eq!(screen.rows[0].text, "3 lines excluded");
         assert_eq!(screen.rows[0].prefix.trim(), "");
+        assert_eq!(screen.rows[1].text, "D");
         assert_eq!(screen.message, "3 lines excluded");
     }
 
@@ -1347,7 +1372,8 @@ mod tests {
         let screen = app.screen_model(80, 24);
         assert_eq!(screen.rows[0].text, "A");
         assert_eq!(screen.rows[1].text, "B");
-        assert_eq!(screen.rows[2].text, "F");
+        assert_eq!(screen.rows[2].text, "3 lines excluded");
+        assert_eq!(screen.rows[3].text, "F");
         assert_eq!(screen.message, "3 lines excluded");
     }
 
@@ -1389,6 +1415,36 @@ mod tests {
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
         assert_eq!(screen.rows[0].text, "A");
         assert_eq!(screen.message, "RESET completed");
+    }
+
+    #[test]
+    fn excluded_block_renders_a_placeholder_row_and_s_reveals_only_that_block() {
+        let mut app = App::new(EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('x'))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('x'))).unwrap();
+        app.handle_action(AppAction::CursorDown).unwrap();
+        app.handle_action(AppAction::CursorDown).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('x'))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('x'))).unwrap();
+        app.handle_action(AppAction::Execute).unwrap();
+
+        let hidden = app.screen_model(80, 24);
+        assert_eq!(hidden.rows[0].line_number, "000001");
+        assert_eq!(hidden.rows[0].text, "3 lines excluded");
+
+        app.handle_action(AppAction::CursorUp).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('s'))).unwrap();
+        app.handle_action(AppAction::Execute).unwrap();
+
+        let shown = app.screen_model(80, 24);
+        assert_eq!(shown.rows[0].text, "A");
+        assert_eq!(shown.rows[1].text, "B");
+        assert_eq!(shown.rows[2].text, "C");
+        assert_eq!(shown.rows[3].text, "D");
+        assert_eq!(shown.message, "3 lines shown");
     }
 
     #[test]
@@ -1568,6 +1624,7 @@ mod tests {
             line_number: "000001".into(),
             prefix: String::new(),
             text: "TEXT".into(),
+            is_excluded_placeholder: false,
             prefix_selected: true,
             text_selected: false,
             text_cursor_col: None,
@@ -1586,6 +1643,7 @@ mod tests {
             line_number: "000001".into(),
             prefix: "D".into(),
             text: "TEXT".into(),
+            is_excluded_placeholder: false,
             prefix_selected: false,
             text_selected: false,
             text_cursor_col: None,
@@ -1604,6 +1662,7 @@ mod tests {
             line_number: "000001".into(),
             prefix: String::new(),
             text: "TEXT".into(),
+            is_excluded_placeholder: false,
             prefix_selected: true,
             text_selected: false,
             text_cursor_col: None,
@@ -1622,6 +1681,7 @@ mod tests {
             line_number: "000001".into(),
             prefix: "XX".into(),
             text: "TEXT".into(),
+            is_excluded_placeholder: false,
             prefix_selected: true,
             text_selected: false,
             text_cursor_col: None,

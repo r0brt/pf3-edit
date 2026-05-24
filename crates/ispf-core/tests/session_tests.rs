@@ -453,6 +453,28 @@ fn reset_restores_hidden_rows_and_sets_a_message() {
 }
 
 #[test]
+fn show_restores_only_the_excluded_block_at_the_selected_row() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(1, PrefixCommand::ExcludeBlock).unwrap();
+    session.execute_prefix(2, PrefixCommand::ExcludeBlock).unwrap();
+    session.execute_prefix(4, PrefixCommand::ExcludeBlock).unwrap();
+    session.execute_prefix(4, PrefixCommand::ExcludeBlock).unwrap();
+
+    session.execute_prefix(1, PrefixCommand::Show).unwrap();
+
+    assert!(!session.buffer().records()[0].excluded);
+    assert!(!session.buffer().records()[1].excluded);
+    assert!(!session.buffer().records()[2].excluded);
+    assert!(!session.buffer().records()[3].excluded);
+    assert!(session.buffer().records()[4].excluded);
+    assert!(!session.buffer().records()[5].excluded);
+    assert_eq!(session.view().cursor_row, 1);
+    assert_eq!(session.message().unwrap().text, "2 lines shown");
+}
+
+#[test]
 fn cancel_restores_the_original_buffer_contents() {
     let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
     let mut session = EditorSession::new(buffer);

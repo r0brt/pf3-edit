@@ -60,6 +60,7 @@ fn parses_prefix_commands() {
     assert_eq!(parse_prefix("MM").unwrap(), PrefixCommand::MoveBlock);
     assert_eq!(parse_prefix("O").unwrap(), PrefixCommand::Overlay);
     assert_eq!(parse_prefix("OO").unwrap(), PrefixCommand::OverlayBlock);
+    assert_eq!(parse_prefix("S").unwrap(), PrefixCommand::Show);
     assert_eq!(parse_prefix("LC").unwrap(), PrefixCommand::Lowercase(1));
     assert_eq!(parse_prefix("LC3").unwrap(), PrefixCommand::Lowercase(3));
     assert_eq!(parse_prefix("LCC").unwrap(), PrefixCommand::LowercaseBlock);

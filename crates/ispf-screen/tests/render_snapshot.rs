@@ -159,3 +159,22 @@ fn bottom_of_data_banner_disappears_when_more_rows_remain_below() {
 
     assert_eq!(screen.bottom_banner, None);
 }
+
+#[test]
+fn excluded_ranges_render_as_single_placeholder_rows() {
+    let mut session = EditorSession::new(EditBuffer::from_text("A\nB\nC\nD\nE\n").unwrap());
+    session.execute_primary(PrimaryCommand::Number(true)).unwrap();
+    session
+        .execute_prefix(1, ispf_command::PrefixCommand::ExcludeBlock)
+        .unwrap();
+    session
+        .execute_prefix(3, ispf_command::PrefixCommand::ExcludeBlock)
+        .unwrap();
+
+    let screen = render_screen(&session, 80, 24);
+
+    assert_eq!(screen.rows[0].text.trim_end(), "A");
+    assert_eq!(screen.rows[1].line_number, "000002");
+    assert_eq!(screen.rows[1].text, "3 lines excluded");
+    assert_eq!(screen.rows[2].text.trim_end(), "E");
+}
