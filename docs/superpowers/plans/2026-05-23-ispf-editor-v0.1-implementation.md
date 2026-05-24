@@ -8,6 +8,12 @@ Current active follow-up block:
 - add local `S` behavior against those placeholder rows
 - preserve `RESET` as the global unexclude command
 
+Most recent implemented follow-up items:
+
+- excluded-block placeholder rows plus local `S`
+- stronger PF-key parity for `F2=Split`
+- retained `&` command-line primary commands
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a Rust workspace for a local ISPF-inspired editor with a reusable core, a thin TUI, and a working `v0.1` feature slice for single-file editing.

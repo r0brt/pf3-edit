@@ -62,6 +62,16 @@ impl App {
                     "Line cmds: D/Dn/DD Delete, I/In Insert, R/Rn/RR Repeat, C/CC/M/MM Copy/Move, A/B/O/OO Destination, LC/UC/LCC/UCC Case, X/XX Exclude, S Show | PF3 Save+Exit | PF5 RFind | PF6 RChange | PF12 Cancel".into(),
                 );
             }
+            AppAction::Split => {
+                if self.session.view().active_area == ActiveArea::DataArea {
+                    match self.session.split_line_at_cursor() {
+                        Ok(()) => self.ui_message = None,
+                        Err(err) => self.ui_message = Some(err),
+                    }
+                } else {
+                    self.ui_message = Some("F2 Split works in the data area".into());
+                }
+            }
             AppAction::ExitSave => {
                 if self.session.buffer().is_dirty() {
                     self.session
@@ -112,6 +122,9 @@ impl App {
                 .session
                 .execute_primary(PrimaryCommand::Right(8))
                 .map_err(anyhow::Error::msg)?,
+            AppAction::Swap => {
+                self.ui_message = Some("F9 Swap is not implemented yet".into());
+            }
             AppAction::RepeatFind => self.execute_primary_command(PrimaryCommand::RFind)?,
             AppAction::RepeatChange => self.execute_primary_command(PrimaryCommand::RChange)?,
             AppAction::ToggleFocus => self.session.toggle_active_area(),
@@ -246,7 +259,13 @@ impl App {
     }
 
     fn execute_command_line(&mut self) -> Result<()> {
-        let command_text = self.command_buffer.trim().to_string();
+        let raw_command_text = self.command_buffer.trim().to_string();
+        let (command_text, retain_command) =
+            if let Some(stripped) = raw_command_text.strip_prefix('&') {
+                (stripped.trim().to_string(), true)
+            } else {
+                (raw_command_text.clone(), false)
+            };
         if command_text.is_empty() {
             return Ok(());
         }
@@ -276,7 +295,9 @@ impl App {
         match parse_primary(&command_text) {
             Ok(command) => {
                 self.execute_primary_command(command)?;
-                self.command_buffer.clear();
+                if !retain_command {
+                    self.command_buffer.clear();
+                }
                 self.ui_message = None;
             }
             Err(err) => {
@@ -886,6 +907,37 @@ mod tests {
     }
 
     #[test]
+    fn f2_splits_the_line_in_the_data_area() {
+        let mut app = App::new(EditBuffer::from_text("ABCD\n").unwrap());
+
+        app.handle_key(KeyEvent::from(KeyCode::Right)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Right)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(2))).unwrap();
+
+        assert_eq!(app.session().buffer().to_text(), "AB\nCD\n");
+        assert_eq!(app.session().view().cursor_row, 1);
+    }
+
+    #[test]
+    fn f2_outside_the_data_area_sets_a_message() {
+        let mut app = App::new(EditBuffer::from_text("ABCD\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(2))).unwrap();
+
+        assert_eq!(app.screen_model(80, 24).message, "F2 Split works in the data area");
+    }
+
+    #[test]
+    fn f9_shows_a_not_implemented_message() {
+        let mut app = App::new(EditBuffer::from_text("A\n").unwrap());
+
+        app.handle_key(KeyEvent::from(KeyCode::F(9))).unwrap();
+
+        assert_eq!(app.screen_model(80, 24).message, "F9 Swap is not implemented yet");
+    }
+
+    #[test]
     fn dirty_buffer_marks_the_title() {
         let mut app = App::new(EditBuffer::from_text("AB\n").unwrap());
 
@@ -1140,6 +1192,38 @@ mod tests {
 
         assert_eq!(app.session().buffer().records()[0].text(), "NEW");
         assert_eq!(app.session().view().cursor_row, 0);
+        assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
+    }
+
+    #[test]
+    fn ampersand_find_stays_in_the_command_line_after_execution() {
+        let mut app = App::new(EditBuffer::from_text("ONE\nTWO\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        for ch in "&FIND TWO".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+
+        let screen = app.screen_model(80, 24);
+        assert_eq!(screen.command_value, "&FIND TWO");
+        assert_eq!(app.session().view().cursor_row, 1);
+        assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
+    }
+
+    #[test]
+    fn ampersand_change_stays_in_the_command_line_after_execution() {
+        let mut app = App::new(EditBuffer::from_text("OLD\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        for ch in "&CHANGE OLD NEW".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+
+        let screen = app.screen_model(80, 24);
+        assert_eq!(screen.command_value, "&CHANGE OLD NEW");
+        assert_eq!(app.session().buffer().records()[0].text(), "NEW");
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
     }
 

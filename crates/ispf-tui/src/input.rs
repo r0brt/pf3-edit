@@ -3,6 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AppAction {
     Help,
+    Split,
     ExitSave,
     CursorUp,
     CursorDown,
@@ -16,6 +17,7 @@ pub enum AppAction {
     ScrollDown,
     ScrollLeft,
     ScrollRight,
+    Swap,
     ToggleFocus,
     Backspace,
     Delete,
@@ -39,6 +41,7 @@ pub fn map_key(event: KeyEvent) -> AppAction {
 
     match event.code {
         KeyCode::F(1) => AppAction::Help,
+        KeyCode::F(2) => AppAction::Split,
         KeyCode::F(3) => AppAction::ExitSave,
         KeyCode::Up => AppAction::CursorUp,
         KeyCode::Down => AppAction::CursorDown,
@@ -50,6 +53,7 @@ pub fn map_key(event: KeyEvent) -> AppAction {
         KeyCode::F(6) => AppAction::RepeatChange,
         KeyCode::F(7) => AppAction::ScrollUp,
         KeyCode::F(8) => AppAction::ScrollDown,
+        KeyCode::F(9) => AppAction::Swap,
         KeyCode::F(10) => AppAction::ScrollLeft,
         KeyCode::F(11) => AppAction::ScrollRight,
         KeyCode::F(12) => AppAction::Cancel,
@@ -70,6 +74,7 @@ mod tests {
     #[test]
     fn maps_pf_navigation_keys() {
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(1))), AppAction::Help);
+        assert_eq!(map_key(KeyEvent::from(KeyCode::F(2))), AppAction::Split);
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(3))), AppAction::ExitSave);
         assert_eq!(map_key(KeyEvent::from(KeyCode::Up)), AppAction::CursorUp);
         assert_eq!(map_key(KeyEvent::from(KeyCode::Down)), AppAction::CursorDown);
@@ -93,6 +98,7 @@ mod tests {
         );
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(7))), AppAction::ScrollUp);
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(8))), AppAction::ScrollDown);
+        assert_eq!(map_key(KeyEvent::from(KeyCode::F(9))), AppAction::Swap);
         assert_eq!(
             map_key(KeyEvent::from(KeyCode::F(10))),
             AppAction::ScrollLeft
