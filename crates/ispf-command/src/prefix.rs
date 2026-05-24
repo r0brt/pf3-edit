@@ -1,8 +1,18 @@
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PrefixCommand {
-    Insert,
-    Delete,
-    Repeat,
+    Insert(usize),
+    Delete(usize),
+    DeleteBlock,
+    Repeat(usize),
+    RepeatBlock,
+    Copy(usize),
+    CopyBlock,
+    Move(usize),
+    MoveBlock,
+    Lowercase(usize),
+    LowercaseBlock,
+    Uppercase(usize),
+    UppercaseBlock,
     After,
     Before,
     Exclude,
@@ -11,13 +21,67 @@ pub enum PrefixCommand {
 
 pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
     match input.trim() {
-        "I" => Ok(PrefixCommand::Insert),
-        "D" => Ok(PrefixCommand::Delete),
-        "R" => Ok(PrefixCommand::Repeat),
+        "DD" => Ok(PrefixCommand::DeleteBlock),
+        "RR" => Ok(PrefixCommand::RepeatBlock),
+        "CC" => Ok(PrefixCommand::CopyBlock),
+        "MM" => Ok(PrefixCommand::MoveBlock),
+        "LCC" => Ok(PrefixCommand::LowercaseBlock),
+        "UCC" => Ok(PrefixCommand::UppercaseBlock),
+        "XX" => Ok(PrefixCommand::ExcludeBlock),
         "A" => Ok(PrefixCommand::After),
         "B" => Ok(PrefixCommand::Before),
         "X" => Ok(PrefixCommand::Exclude),
-        "XX" => Ok(PrefixCommand::ExcludeBlock),
-        other => Err(format!("unknown prefix command: {other}")),
+        other if matches_multi_letter_counted_line_command(other, "LC") => {
+            Ok(PrefixCommand::Lowercase(parse_multi_letter_count(other, 2)))
+        }
+        other if matches_multi_letter_counted_line_command(other, "UC") => {
+            Ok(PrefixCommand::Uppercase(parse_multi_letter_count(other, 2)))
+        }
+        other if matches_counted_line_command(other, 'I') => {
+            Ok(PrefixCommand::Insert(parse_line_command_count(other)))
+        }
+        other if matches_counted_line_command(other, 'D') => {
+            Ok(PrefixCommand::Delete(parse_line_command_count(other)))
+        }
+        other if matches_counted_line_command(other, 'R') => {
+            Ok(PrefixCommand::Repeat(parse_line_command_count(other)))
+        }
+        other if matches_counted_line_command(other, 'C') => {
+            Ok(PrefixCommand::Copy(parse_line_command_count(other)))
+        }
+        other if matches_counted_line_command(other, 'M') => {
+            Ok(PrefixCommand::Move(parse_line_command_count(other)))
+        }
+        other => Err(format!("unknown line command: {other}")),
+    }
+}
+
+fn matches_counted_line_command(input: &str, command: char) -> bool {
+    let mut chars = input.chars();
+    matches!(chars.next(), Some(first) if first == command)
+        && chars.all(|ch| ch.is_ascii_digit())
+}
+
+fn parse_line_command_count(input: &str) -> usize {
+    let suffix = &input[1..];
+    if suffix.is_empty() {
+        1
+    } else {
+        suffix.parse().unwrap_or(1)
+    }
+}
+
+fn matches_multi_letter_counted_line_command(input: &str, command: &str) -> bool {
+    input
+        .strip_prefix(command)
+        .is_some_and(|suffix| !suffix.starts_with(command) && suffix.chars().all(|ch| ch.is_ascii_digit()))
+}
+
+fn parse_multi_letter_count(input: &str, prefix_len: usize) -> usize {
+    let suffix = &input[prefix_len..];
+    if suffix.is_empty() {
+        1
+    } else {
+        suffix.parse().unwrap_or(1)
     }
 }

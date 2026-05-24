@@ -7,6 +7,8 @@ pub enum PrimaryCommand {
     RFind,
     Change { from: String, to: String },
     RChange,
+    Locate { target: usize },
+    Cols,
     Reset,
     Up(usize),
     Down(usize),
@@ -26,6 +28,12 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
         ["END"] => Ok(PrimaryCommand::End),
         ["RFIND"] => Ok(PrimaryCommand::RFind),
         ["RCHANGE"] => Ok(PrimaryCommand::RChange),
+        ["LOCATE", target] | ["L", target] => Ok(PrimaryCommand::Locate {
+            target: target
+                .parse()
+                .map_err(|_| "invalid LOCATE target".to_string())?,
+        }),
+        ["COLS"] => Ok(PrimaryCommand::Cols),
         ["RESET"] => Ok(PrimaryCommand::Reset),
         ["UNDO"] => Ok(PrimaryCommand::Undo),
         ["UNNUM"] => Ok(PrimaryCommand::Number(false)),
@@ -39,6 +47,18 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
             from: (*from).into(),
             to: (*to).into(),
         }),
+        ["BOUNDS"] => Ok(PrimaryCommand::Bounds(None)),
+        ["BOUNDS", left, right] => Ok(PrimaryCommand::Bounds(Some((
+            left.parse()
+                .map_err(|_| "invalid BOUNDS left column".to_string())?,
+            if *right == "*" {
+                144
+            } else {
+                right
+                    .parse()
+                    .map_err(|_| "invalid BOUNDS right column".to_string())?
+            },
+        )))),
         ["UP", count] => Ok(PrimaryCommand::Up(
             count
                 .parse()

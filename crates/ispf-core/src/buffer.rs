@@ -14,7 +14,7 @@ impl Record {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EditBuffer {
     records: Vec<Record>,
     dirty: bool,
@@ -74,6 +74,10 @@ impl EditBuffer {
         &self.records
     }
 
+    pub fn file_path(&self) -> Option<&std::path::Path> {
+        self.file_path.as_deref()
+    }
+
     pub fn is_dirty(&self) -> bool {
         self.dirty
     }
@@ -119,13 +123,18 @@ impl EditBuffer {
             excluded: false,
         };
         self.next_id += 1;
-        let insert_at = index.min(self.records.len());
-        self.records.insert(insert_at, record);
-        self.dirty = true;
+        self.insert_record_at(index, record);
     }
 
     pub fn insert_before(&mut self, index: usize, text: &str) {
         self.insert_at(index.min(self.records.len()), text);
+    }
+
+    pub(crate) fn insert_record_at(&mut self, index: usize, record: Record) {
+        self.next_id = self.next_id.max(record.id.0.saturating_add(1));
+        let insert_at = index.min(self.records.len());
+        self.records.insert(insert_at, record);
+        self.dirty = true;
     }
 
     pub fn delete_at(&mut self, index: usize) -> Option<Record> {

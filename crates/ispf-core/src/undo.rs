@@ -1,8 +1,12 @@
+use crate::Record;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum UndoEntry {
     InsertedLine { index: usize },
-    DeletedLine { index: usize, text: String },
+    DeletedLine { index: usize, record: Record },
     ReplacedLine { index: usize, previous: String },
+    JoinedLine { index: usize, previous: String, removed: Record },
+    SplitLine { index: usize, previous: String },
     SetExcluded { index: usize, previous: bool },
 }
 
