@@ -124,6 +124,10 @@ Responsibilities:
 - search and change operations
 - excluded-line behavior
 
+Implementation note as of 2026-05-25:
+
+- the session layer has been internally decomposed into focused `navigation`, `editing`, and `transfers` submodules so the core can grow new command families without continuing to centralize all behavior in one monolithic file
+
 ### `ispf-screen`
 
 This crate converts editor state into a render-oriented screen model.

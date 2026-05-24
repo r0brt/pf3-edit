@@ -13,6 +13,7 @@ Most recent implemented follow-up items:
 - excluded-block placeholder rows plus local `S`
 - stronger PF-key parity for `F2=Split`
 - retained `&` command-line primary commands
+- internal `ispf-core` session refactor into focused navigation, editing, and transfer submodules before the next larger text-workflow block
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
