@@ -33,6 +33,7 @@ pub enum ExitDisposition {
 pub enum Destination {
     After(usize),
     Before(usize),
+    Overlay(usize),
 }
 
 pub struct EditorSession {
@@ -53,6 +54,9 @@ pub struct EditorSession {
     pending_move_block: Option<usize>,
     pending_move_range: Option<(usize, usize)>,
     pending_move_display: Option<&'static str>,
+    pending_overlay_block: Option<usize>,
+    pending_overlay_range: Option<(usize, usize)>,
+    pending_overlay_display: Option<&'static str>,
     pending_lowercase_block: Option<usize>,
     pending_uppercase_block: Option<usize>,
     pending_destination: Option<Destination>,
@@ -86,6 +90,9 @@ impl EditorSession {
             pending_move_block: None,
             pending_move_range: None,
             pending_move_display: None,
+            pending_overlay_block: None,
+            pending_overlay_range: None,
+            pending_overlay_display: None,
             pending_lowercase_block: None,
             pending_uppercase_block: None,
             pending_destination: None,
@@ -121,11 +128,15 @@ impl EditorSession {
     }
 
     pub fn move_cursor_left(&mut self) {
-        self.view.cursor_col = self.view.cursor_col.saturating_sub(1);
+        self.view.cursor_col = self
+            .view
+            .cursor_col
+            .saturating_sub(1)
+            .max(self.bounds_start_col());
     }
 
     pub fn move_cursor_right(&mut self) {
-        let max_col = self.current_line_char_len();
+        let max_col = self.bounds_line_end_col();
         self.view.cursor_col = (self.view.cursor_col + 1).min(max_col);
     }
 
@@ -186,6 +197,9 @@ impl EditorSession {
                 self.pending_move_block = None;
                 self.pending_move_range = None;
                 self.pending_move_display = None;
+                self.pending_overlay_block = None;
+                self.pending_overlay_range = None;
+                self.pending_overlay_display = None;
                 self.pending_lowercase_block = None;
                 self.pending_uppercase_block = None;
                 self.pending_destination = None;
@@ -455,6 +469,33 @@ impl EditorSession {
                     self.pending_move_display = Some("MM");
                     self.message = Some(SessionMessage {
                         text: "Move block start set".into(),
+                        is_error: false,
+                    });
+                }
+            }
+            PrefixCommand::Overlay => {
+                self.pending_overlay_range = Some((row, row));
+                self.pending_overlay_display = Some("O");
+                self.message = Some(SessionMessage {
+                    text: "Overlay destination set".into(),
+                    is_error: false,
+                });
+                self.try_complete_pending_transfer()?;
+            }
+            PrefixCommand::OverlayBlock => {
+                if let Some(start) = self.pending_overlay_block.take() {
+                    self.pending_overlay_range = Some((start.min(row), start.max(row)));
+                    self.pending_overlay_display = Some("OO");
+                    self.message = Some(SessionMessage {
+                        text: "Overlay block set".into(),
+                        is_error: false,
+                    });
+                    self.try_complete_pending_transfer()?;
+                } else {
+                    self.pending_overlay_block = Some(row);
+                    self.pending_overlay_display = Some("OO");
+                    self.message = Some(SessionMessage {
+                        text: "Overlay block start set".into(),
                         is_error: false,
                     });
                 }
@@ -780,6 +821,18 @@ impl EditorSession {
         self.pending_move_display
     }
 
+    pub fn pending_overlay_block(&self) -> Option<usize> {
+        self.pending_overlay_block
+    }
+
+    pub fn pending_overlay_range(&self) -> Option<(usize, usize)> {
+        self.pending_overlay_range
+    }
+
+    pub fn pending_overlay_display(&self) -> Option<&'static str> {
+        self.pending_overlay_display
+    }
+
     pub fn pending_lowercase_block(&self) -> Option<usize> {
         self.pending_lowercase_block
     }
@@ -940,6 +993,40 @@ impl EditorSession {
     }
 
     fn try_complete_pending_transfer(&mut self) -> Result<(), String> {
+        if let (Some((start, end)), Some((target_start, target_end))) =
+            (self.pending_copy_range, self.pending_overlay_range)
+        {
+            if let Err(err) = self.apply_copy_overlay_range(start, end, target_start, target_end) {
+                self.message = Some(SessionMessage {
+                    text: err.clone(),
+                    is_error: true,
+                });
+                return Err(err);
+            }
+            self.pending_copy_range = None;
+            self.pending_copy_display = None;
+            self.pending_overlay_range = None;
+            self.pending_overlay_display = None;
+            return Ok(());
+        }
+
+        if let (Some((start, end)), Some((target_start, target_end))) =
+            (self.pending_move_range, self.pending_overlay_range)
+        {
+            if let Err(err) = self.apply_move_overlay_range(start, end, target_start, target_end) {
+                self.message = Some(SessionMessage {
+                    text: err.clone(),
+                    is_error: true,
+                });
+                return Err(err);
+            }
+            self.pending_move_range = None;
+            self.pending_move_display = None;
+            self.pending_overlay_range = None;
+            self.pending_overlay_display = None;
+            return Ok(());
+        }
+
         if let (Some((start, end)), Some(destination)) =
             (self.pending_copy_range, self.pending_destination)
         {
@@ -970,6 +1057,7 @@ impl EditorSession {
         let insert_at = match destination {
             Destination::After(row) => row.saturating_add(1).min(self.buffer.records().len()),
             Destination::Before(row) => row.min(self.buffer.records().len()),
+            Destination::Overlay(_) => return,
         };
 
         for (offset, text) in lines.iter().enumerate() {
@@ -993,7 +1081,7 @@ impl EditorSession {
         destination: Destination,
     ) -> Result<(), String> {
         let destination_row = match destination {
-            Destination::After(row) | Destination::Before(row) => row,
+            Destination::After(row) | Destination::Before(row) | Destination::Overlay(row) => row,
         };
         if (start..=end).contains(&destination_row) {
             self.message = Some(SessionMessage {
@@ -1021,6 +1109,7 @@ impl EditorSession {
         let insert_at = match destination {
             Destination::After(_) => adjusted_destination.saturating_add(1),
             Destination::Before(_) => adjusted_destination,
+            Destination::Overlay(_) => adjusted_destination,
         };
 
         for (offset, record) in moved.into_iter().enumerate() {
@@ -1032,6 +1121,108 @@ impl EditorSession {
             text: match moved_count {
                 1 => "1 line moved".into(),
                 count => format!("{count} lines moved"),
+            },
+            is_error: false,
+        });
+        Ok(())
+    }
+
+    fn apply_copy_overlay_range(
+        &mut self,
+        start: usize,
+        end: usize,
+        target_start: usize,
+        target_end: usize,
+    ) -> Result<(), String> {
+        let lines: Vec<String> = self.buffer.records()[start..=end]
+            .iter()
+            .map(|record| record.text.clone())
+            .collect();
+        let target_rows =
+            overlay_target_rows(lines.len(), target_start, target_end, self.buffer.records().len())?;
+
+        for (source, target_row) in lines.iter().zip(target_rows.iter().copied()) {
+            let previous = self
+                .buffer
+                .records()
+                .get(target_row)
+                .ok_or_else(|| "invalid row".to_string())?
+                .text
+                .clone();
+            let updated = overlay_non_blank_in_bounds(&previous, source, self.profile.bounds);
+            self.buffer
+                .replace_line(target_row, &updated)
+                .ok_or_else(|| "invalid row".to_string())?;
+            self.undo.push(UndoEntry::ReplacedLine {
+                index: target_row,
+                previous,
+            });
+        }
+
+        self.view.cursor_row = target_rows[0];
+        self.message = Some(SessionMessage {
+            text: match lines.len() {
+                1 => "1 line overlaid".into(),
+                count => format!("{count} lines overlaid"),
+            },
+            is_error: false,
+        });
+        Ok(())
+    }
+
+    fn apply_move_overlay_range(
+        &mut self,
+        start: usize,
+        end: usize,
+        target_start: usize,
+        target_end: usize,
+    ) -> Result<(), String> {
+        let moved_count = end - start + 1;
+        let lines: Vec<String> = self.buffer.records()[start..=end]
+            .iter()
+            .map(|record| record.text.clone())
+            .collect();
+        let target_rows =
+            overlay_target_rows(lines.len(), target_start, target_end, self.buffer.records().len())?;
+
+        if target_rows.iter().any(|row| (start..=end).contains(row)) {
+            self.message = Some(SessionMessage {
+                text: "Overlay target cannot overlap moved lines".into(),
+                is_error: true,
+            });
+            return Err("overlay target cannot overlap moved lines".into());
+        }
+
+        for (source, target_row) in lines.iter().zip(target_rows.iter().copied()) {
+            let previous = self
+                .buffer
+                .records()
+                .get(target_row)
+                .ok_or_else(|| "invalid row".to_string())?
+                .text
+                .clone();
+            let updated = overlay_non_blank_in_bounds(&previous, source, self.profile.bounds);
+            self.buffer
+                .replace_line(target_row, &updated)
+                .ok_or_else(|| "invalid row".to_string())?;
+        }
+
+        for _ in 0..moved_count {
+            self.buffer
+                .delete_at(start)
+                .ok_or_else(|| "invalid row".to_string())?;
+        }
+
+        let adjusted_row = if start < target_rows[0] {
+            target_rows[0].saturating_sub(moved_count)
+        } else {
+            target_rows[0]
+        };
+        self.view.cursor_row = adjusted_row.min(self.buffer.records().len().saturating_sub(1));
+        self.message = Some(SessionMessage {
+            text: match moved_count {
+                1 => "1 line moved with overlay".into(),
+                count => format!("{count} lines moved with overlay"),
             },
             is_error: false,
         });
@@ -1158,4 +1349,50 @@ fn convert_case_in_bounds(text: &str, bounds: Option<(usize, usize)>, uppercase:
             }
         })
         .collect()
+}
+
+fn overlay_target_rows(
+    source_len: usize,
+    target_start: usize,
+    target_end: usize,
+    total_rows: usize,
+) -> Result<Vec<usize>, String> {
+    if source_len == 0 {
+        return Err("overlay requires at least one source line".into());
+    }
+
+    if target_start >= total_rows {
+        return Err("invalid row".into());
+    }
+
+    if target_start == target_end {
+        let last = target_start + source_len - 1;
+        if last >= total_rows {
+            return Err("Overlay target must fit within the buffer".into());
+        }
+        return Ok((target_start..=last).collect());
+    }
+
+    let target_len = target_end - target_start + 1;
+    if target_len != source_len {
+        return Err("Overlay target must match source line count".into());
+    }
+
+    Ok((target_start..=target_end).collect())
+}
+
+fn overlay_non_blank_in_bounds(dest: &str, source: &str, bounds: Option<(usize, usize)>) -> String {
+    let mut dest_chars: Vec<char> = dest.chars().collect();
+    let source_chars: Vec<char> = source.chars().collect();
+    let (start, end) = bounded_char_range(source, bounds);
+    let target_len = dest_chars.len().max(source_chars.len());
+    dest_chars.resize(target_len, ' ');
+
+    for index in start..end.min(source_chars.len()) {
+        if source_chars[index] != ' ' {
+            dest_chars[index] = source_chars[index];
+        }
+    }
+
+    dest_chars.into_iter().collect()
 }

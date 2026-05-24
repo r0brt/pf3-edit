@@ -131,6 +131,24 @@ fn horizontal_cursor_movement_clamps_to_line_length() {
 }
 
 #[test]
+fn horizontal_cursor_movement_respects_bounds() {
+    let buffer = EditBuffer::from_text("ABCDEFG\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((3, 5))))
+        .unwrap();
+
+    session.move_cursor_to_line_start();
+    session.move_cursor_left();
+    assert_eq!(session.view().cursor_col, 2);
+
+    session.move_cursor_right();
+    session.move_cursor_right();
+    session.move_cursor_right();
+    assert_eq!(session.view().cursor_col, 4);
+}
+
+#[test]
 fn line_start_and_end_move_the_cursor_within_the_current_record() {
     let buffer = EditBuffer::from_text("ABCD\nX\n").unwrap();
     let mut session = EditorSession::new(buffer);
@@ -606,4 +624,58 @@ fn move_count_moves_multiple_lines_before_the_destination() {
 
     assert_eq!(session.buffer().to_text(), "A\nD\nB\nC\nE\n");
     assert_eq!(session.message().unwrap().text, "2 lines moved");
+}
+
+#[test]
+fn copy_overlays_non_blank_characters_onto_the_destination_line() {
+    let buffer = EditBuffer::from_text("AB  \n1234\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(0, PrefixCommand::Copy(1)).unwrap();
+    session.execute_prefix(1, PrefixCommand::Overlay).unwrap();
+
+    assert_eq!(session.buffer().to_text(), "AB  \nAB34\n");
+}
+
+#[test]
+fn move_overlays_the_source_and_removes_the_original_line() {
+    let buffer = EditBuffer::from_text("AB\n12\nZZ\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(0, PrefixCommand::Move(1)).unwrap();
+    session.execute_prefix(1, PrefixCommand::Overlay).unwrap();
+
+    assert_eq!(session.buffer().to_text(), "AB\nZZ\n");
+}
+
+#[test]
+fn overlay_respects_bounds() {
+    let buffer = EditBuffer::from_text("WXYZ\n1234\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((2, 3))))
+        .unwrap();
+
+    session.execute_prefix(0, PrefixCommand::Copy(1)).unwrap();
+    session.execute_prefix(1, PrefixCommand::Overlay).unwrap();
+
+    assert_eq!(session.buffer().to_text(), "WXYZ\n1XY4\n");
+}
+
+#[test]
+fn overlay_block_requires_matching_source_and_target_lengths() {
+    let buffer = EditBuffer::from_text("A\nB\n1\n2\n3\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(0, PrefixCommand::CopyBlock).unwrap();
+    session.execute_prefix(1, PrefixCommand::CopyBlock).unwrap();
+    session.execute_prefix(2, PrefixCommand::OverlayBlock).unwrap();
+    let err = session.execute_prefix(4, PrefixCommand::OverlayBlock).unwrap_err();
+
+    assert_eq!(err, "Overlay target must match source line count");
+    assert_eq!(
+        session.message().unwrap().text,
+        "Overlay target must match source line count"
+    );
+    assert_eq!(session.buffer().to_text(), "A\nB\n1\n2\n3\n");
 }

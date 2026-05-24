@@ -1,6 +1,6 @@
 # ISPF Editor v0.1 Implementation Plan
 
-Status note as of 2026-05-25: this file is now mainly historical. The project has implemented the original workspace/core/TUI plan and moved beyond the first `v0.1` slice with additional command coverage, richer data-area editing, visible `COLS`/`BOUNDS`, and broader ISPF-like behavior.
+Status note as of 2026-05-25: this file is now mainly historical. The project has implemented the original workspace/core/TUI plan and moved beyond the first `v0.1` slice with additional command coverage, richer data-area editing, visible `COLS`/`BOUNDS`, stronger bounds-aware behavior, and overlay support through `O/OO`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

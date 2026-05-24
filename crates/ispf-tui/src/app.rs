@@ -59,7 +59,7 @@ impl App {
         match action {
             AppAction::Help => {
                 self.ui_message = Some(
-                    "Line cmds: D/Dn/DD Delete, I/In Insert, R/Rn/RR Repeat, CC/MM Copy/Move, A/B Destination, LC/UC/LCC/UCC Case, X/XX Exclude | PF3 Save+Exit | PF5 RFind | PF6 RChange | PF12 Cancel".into(),
+                    "Line cmds: D/Dn/DD Delete, I/In Insert, R/Rn/RR Repeat, C/CC/M/MM Copy/Move, A/B/O/OO Destination, LC/UC/LCC/UCC Case, X/XX Exclude | PF3 Save+Exit | PF5 RFind | PF6 RChange | PF12 Cancel".into(),
                 );
             }
             AppAction::ExitSave => {
@@ -369,6 +369,14 @@ impl App {
             self.line_command_markers.insert(start, display.into());
             self.line_command_markers.insert(end, display.into());
         }
+        if let Some(row) = self.session.pending_overlay_block() {
+            self.line_command_markers.insert(row, "OO".into());
+        }
+        if let Some((start, end)) = self.session.pending_overlay_range() {
+            let display = self.session.pending_overlay_display().unwrap_or("OO");
+            self.line_command_markers.insert(start, display.into());
+            self.line_command_markers.insert(end, display.into());
+        }
         if let Some(row) = self.session.pending_lowercase_block() {
             self.line_command_markers.insert(row, "LCC".into());
         }
@@ -382,6 +390,9 @@ impl App {
                 }
                 ispf_core::Destination::Before(row) => {
                     self.line_command_markers.insert(row, "B".into());
+                }
+                ispf_core::Destination::Overlay(row) => {
+                    self.line_command_markers.insert(row, "O".into());
                 }
             }
         }

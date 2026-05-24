@@ -9,6 +9,8 @@ pub enum PrefixCommand {
     CopyBlock,
     Move(usize),
     MoveBlock,
+    Overlay,
+    OverlayBlock,
     Lowercase(usize),
     LowercaseBlock,
     Uppercase(usize),
@@ -25,11 +27,13 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
         "RR" => Ok(PrefixCommand::RepeatBlock),
         "CC" => Ok(PrefixCommand::CopyBlock),
         "MM" => Ok(PrefixCommand::MoveBlock),
+        "OO" => Ok(PrefixCommand::OverlayBlock),
         "LCC" => Ok(PrefixCommand::LowercaseBlock),
         "UCC" => Ok(PrefixCommand::UppercaseBlock),
         "XX" => Ok(PrefixCommand::ExcludeBlock),
         "A" => Ok(PrefixCommand::After),
         "B" => Ok(PrefixCommand::Before),
+        "O" => Ok(PrefixCommand::Overlay),
         "X" => Ok(PrefixCommand::Exclude),
         other if matches_multi_letter_counted_line_command(other, "LC") => {
             Ok(PrefixCommand::Lowercase(parse_multi_letter_count(other, 2)))
