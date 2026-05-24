@@ -101,5 +101,6 @@ cargo clippy --all-targets --all-features -- -D warnings
 
 ## Superpowers Docs
 
+- Contribution guide: [CONTRIBUTING.md](/Users/robert/code/ispf-editor/CONTRIBUTING.md)
 - Spec: [2026-05-23-ispf-editor-design.md](/Users/robert/code/ispf-editor/docs/superpowers/specs/2026-05-23-ispf-editor-design.md)
 - Plan: [2026-05-23-ispf-editor-v0.1-implementation.md](/Users/robert/code/ispf-editor/docs/superpowers/plans/2026-05-23-ispf-editor-v0.1-implementation.md)
