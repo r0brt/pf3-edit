@@ -1,0 +1,105 @@
+# pf3-edit
+
+`pf3-edit` is a local Rust editor inspired by the z/OS ISPF editor.
+
+It is not trying to emulate all of z/OS or all of ISPF. The project focuses on the interaction model that makes ISPF distinctive: `Command ===>`, a line command field, record-oriented editing, strong keyboard flow, and a recognizably host-like screen.
+
+## Status
+
+This repository is active work in progress, but it is already beyond a toy prototype.
+
+Current implemented highlights:
+
+- terminal UI built with `ratatui`
+- reusable core/editor/session model
+- `Command ===>` and line command workflows
+- visible `Top of Data`, `Bottom of Data`, `=COLS>`, and `=BNDS>` lines
+- undo, save/cancel/end, find/change, locate, scroll, bounds, numbering, caps
+- direct data-area editing with overwrite, split, join, delete, and line feed
+- line commands including `I`, `D`, `DD`, `R`, `RR`, `C`, `CC`, `M`, `MM`, `A`, `B`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
+
+Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
+
+## Run
+
+```bash
+cargo run -p ispf-tui -- fixtures/sample.txt
+```
+
+You can also pass your own file path:
+
+```bash
+cargo run -p ispf-tui -- /path/to/file.txt
+```
+
+Without a file argument, the editor starts with a tiny in-memory buffer.
+
+## Useful Keys
+
+- `Tab`: cycle `Primary Command Field -> Line Command Field -> Data Area`
+- `F3`: save and exit
+- `F5`: `RFIND`
+- `F6`: `RCHANGE`
+- `F7` / `F8`: scroll up / down
+- `F10` / `F11`: scroll left / right
+- `F12`: cancel
+- `Esc`: `END`
+- `Enter` in data area: split the current line at the cursor
+- `Shift+Enter` in data area: insert a blank line below
+- `Ctrl+J`: move the cursor down
+- `Home` / `End`: move to line start / line end
+  On many MacBook keyboards this is usually `fn + Left` / `fn + Right`.
+
+## Primary Commands
+
+- `SAVE`
+- `CANCEL`
+- `END`
+- `FIND <text>`
+- `RFIND`
+- `CHANGE <from> <to>`
+- `RCHANGE`
+- `LOCATE <line>`
+- `L <line>`
+- `COLS`
+- `BOUNDS`
+- `BOUNDS <left> <right>`
+- `RESET`
+- `NUMBER`
+- `UNNUM`
+- `CAPS ON`
+- `CAPS OFF`
+- `UNDO`
+
+Line commands can also be driven from the primary command field with `:`, for example `:D2`.
+
+## Line Commands
+
+- `I`, `I3`
+- `D`, `D2`, `DD`
+- `R`, `R4`, `RR`
+- `C`, `C2`, `CC`
+- `M`, `M2`, `MM`
+- `A`, `B`
+- `X`, `XX`
+- `LC`, `LC3`, `LCC`
+- `UC`, `UC2`, `UCC`
+
+## Project Layout
+
+- [crates/ispf-core](/Users/robert/code/ispf-editor/crates/ispf-core): editor state, buffer, session logic, undo, command execution
+- [crates/ispf-command](/Users/robert/code/ispf-editor/crates/ispf-command): parsing for primary and line commands
+- [crates/ispf-screen](/Users/robert/code/ispf-editor/crates/ispf-screen): render model for the TUI
+- [crates/ispf-tui](/Users/robert/code/ispf-editor/crates/ispf-tui): terminal runtime and interaction layer
+
+## Verification
+
+```bash
+cargo test
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+## Superpowers Docs
+
+- Spec: [2026-05-23-ispf-editor-design.md](/Users/robert/code/ispf-editor/docs/superpowers/specs/2026-05-23-ispf-editor-design.md)
+- Plan: [2026-05-23-ispf-editor-v0.1-implementation.md](/Users/robert/code/ispf-editor/docs/superpowers/plans/2026-05-23-ispf-editor-v0.1-implementation.md)

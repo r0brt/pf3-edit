@@ -1,7 +1,7 @@
 # ISPF Editor Local Rebuild Design
 
 Date: 2026-05-23
-Status: Draft approved in conversation
+Status: Implemented and extended in code, reviewed 2026-05-25
 
 ## Goal
 
@@ -10,7 +10,7 @@ Build a local Rust-based editor inspired by the z/OS ISPF editor.
 The target for `v0.1` is not a full emulator of z/OS or ISPF. It is a practical, working editor that preserves the core ISPF interaction model:
 
 - `Command ===>` driven editing
-- Prefix or line commands
+- line commands in the left line command field
 - Record-oriented buffer behavior
 - ISPF-like scrolling and panel structure
 - Lightweight profile options such as `CAPS`, `NUMBER`, and `BOUNDS`
@@ -25,6 +25,27 @@ The chosen direction is a hybrid:
 - internally designed as a modern Rust application with clear boundaries
 
 The first release is intended to be a working daily-use editor for local files rather than a demo and not a full host-environment recreation.
+
+## Current Implementation Status
+
+As of 2026-05-25, the repository has moved beyond the original minimum `v0.1` slice.
+
+Implemented highlights:
+
+- Rust workspace with `ispf-core`, `ispf-command`, `ispf-screen`, and `ispf-tui`
+- visible ISPF-like TUI shell with menu bar, `Command ===>`, `Scroll ===>`, PF-key legend, and data banners
+- working primary commands including `SAVE`, `CANCEL`, `END`, `FIND`, `RFIND`, `CHANGE`, `RCHANGE`, `LOCATE`, `COLS`, `BOUNDS`, `RESET`, `UNDO`, `NUMBER`, `UNNUM`, and `CAPS`
+- working line commands including `I`, `In`, `D`, `Dn`, `DD`, `R`, `Rn`, `RR`, `C`, `Cn`, `CC`, `M`, `Mn`, `MM`, `A`, `B`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, and `UCC`
+- direct data-area editing with overwrite behavior, delete, join, split, line feed, and undo
+- visible `=COLS>` and `=BNDS>` support
+
+Still intentionally outside the implemented scope:
+
+- dataset/member navigation
+- macro execution
+- persistent profiles
+- full browse-mode behavior
+- the broader long tail of ISPF commands
 
 ## Non-Goals For v0.1
 
