@@ -7,6 +7,7 @@ impl EditorSession {
         let inserted_index =
             row.saturating_add(1).min(self.buffer.records().len().saturating_sub(1));
         self.view.cursor_row = inserted_index;
+        self.desired_cursor_col = self.view.cursor_col;
         self.undo.push(UndoEntry::InsertedLine {
             index: inserted_index,
         });
@@ -38,6 +39,7 @@ impl EditorSession {
             previous,
         });
         self.view.cursor_col = (self.view.cursor_col + 1).min(bounds_end.saturating_add(1));
+        self.desired_cursor_col = self.view.cursor_col;
         Ok(())
     }
 
@@ -75,6 +77,7 @@ impl EditorSession {
             });
             self.view.cursor_row = previous_index;
             self.view.cursor_col = previous_len;
+            self.desired_cursor_col = self.view.cursor_col;
             return Ok(());
         }
 
@@ -95,6 +98,7 @@ impl EditorSession {
             previous,
         });
         self.view.cursor_col -= 1;
+        self.desired_cursor_col = self.view.cursor_col;
         Ok(())
     }
 
@@ -121,6 +125,7 @@ impl EditorSession {
                 index: row,
                 previous: current,
             });
+            self.desired_cursor_col = self.view.cursor_col;
             return Ok(());
         }
 
@@ -148,6 +153,7 @@ impl EditorSession {
         if self.current_row_is_excluded() {
             return Err("Cannot edit excluded lines".into());
         }
+        self.ensure_cursor_within_active_bounds()?;
         let row = self.view.cursor_row;
         let current = self
             .buffer
@@ -168,6 +174,7 @@ impl EditorSession {
         });
         self.view.cursor_row = row + 1;
         self.view.cursor_col = 0;
+        self.desired_cursor_col = 0;
         Ok(())
     }
 
@@ -243,7 +250,8 @@ impl EditorSession {
     }
 
     pub(super) fn clamp_cursor_col(&mut self) {
-        self.view.cursor_col = self.view.cursor_col.min(self.current_line_char_len());
+        self.desired_cursor_col = self.desired_cursor_col.min(self.current_line_char_len());
+        self.apply_cursor_col_from_desired();
     }
 
     fn current_line_char_len(&self) -> usize {
@@ -288,6 +296,20 @@ impl EditorSession {
             .unwrap_or((0, usize::MAX))
     }
 
+    pub(super) fn apply_cursor_col_from_desired(&mut self) {
+        let start = self.bounds_start_col();
+        let end = self.bounds_line_end_col();
+        self.view.cursor_col = self.desired_cursor_col.clamp(start, end);
+    }
+
+    fn ensure_cursor_within_active_bounds(&self) -> Result<(), String> {
+        let (start, end) = self.edit_bounds();
+        if self.view.cursor_col < start || self.view.cursor_col > end {
+            return Err("Cursor is outside the active bounds".into());
+        }
+        Ok(())
+    }
+
     pub(super) fn apply_case_range(
         &mut self,
         start: usize,
@@ -319,6 +341,7 @@ impl EditorSession {
         if self.current_row_is_excluded() {
             return Err("Cannot edit excluded lines".into());
         }
+        self.ensure_cursor_within_active_bounds()?;
 
         let current = self
             .buffer
@@ -343,6 +366,7 @@ impl EditorSession {
         });
         self.view.cursor_row = row + blank_lines + 1;
         self.view.cursor_col = 0;
+        self.desired_cursor_col = 0;
         Ok(())
     }
 
@@ -377,6 +401,7 @@ impl EditorSession {
         });
         self.view.cursor_row = start;
         self.view.cursor_col = self.bounds_start_col();
+        self.desired_cursor_col = self.view.cursor_col;
         Ok(())
     }
 
@@ -408,6 +433,7 @@ impl EditorSession {
         });
         self.view.cursor_row = row;
         self.view.cursor_col = self.bounds_start_col();
+        self.desired_cursor_col = self.view.cursor_col;
         Ok(())
     }
 
@@ -427,10 +453,12 @@ impl EditorSession {
         let (bounds_start, bounds_end) = self.edit_bounds();
         if self.view.cursor_col < bounds_start {
             self.view.cursor_col = bounds_start;
+            self.desired_cursor_col = self.view.cursor_col;
         }
         if self.view.cursor_col > bounds_end {
             self.advance_text_entry_row(&mut mode)?;
             self.view.cursor_col = bounds_start;
+            self.desired_cursor_col = self.view.cursor_col;
         }
 
         let row = self.view.cursor_row;
@@ -450,6 +478,7 @@ impl EditorSession {
             previous,
         });
         self.view.cursor_col += 1;
+        self.desired_cursor_col = self.view.cursor_col;
         self.text_entry = Some(mode);
         Ok(())
     }

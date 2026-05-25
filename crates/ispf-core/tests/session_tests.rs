@@ -770,3 +770,68 @@ fn overlay_block_requires_matching_source_and_target_lengths() {
     );
     assert_eq!(session.buffer().to_text(), "A\nB\n1\n2\n3\n");
 }
+
+#[test]
+fn text_split_refuses_to_split_left_of_the_start_bound() {
+    let buffer = EditBuffer::from_text("ABCDE\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((3, 5))))
+        .unwrap();
+
+    let result = session.execute_prefix(0, PrefixCommand::TextSplit(0));
+
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), "Cursor is outside the active bounds");
+    assert_eq!(session.buffer().to_text(), "ABCDE\n");
+}
+
+#[test]
+fn text_split_refuses_to_split_right_of_the_end_bound() {
+    let buffer = EditBuffer::from_text("ABCDE\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    for _ in 0..4 {
+        session.move_cursor_right();
+    }
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((1, 3))))
+        .unwrap();
+
+    let result = session.execute_prefix(0, PrefixCommand::TextSplit(0));
+
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), "Cursor is outside the active bounds");
+    assert_eq!(session.buffer().to_text(), "ABCDE\n");
+}
+
+#[test]
+fn move_cursor_down_preserves_horizontal_column_across_shorter_lines() {
+    let buffer = EditBuffer::from_text("ABCDE\nX\nABCDE\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    for _ in 0..4 {
+        session.move_cursor_right();
+    }
+
+    session.move_cursor_down();
+    session.move_cursor_down();
+
+    assert_eq!(session.view().cursor_row, 2);
+    assert_eq!(session.view().cursor_col, 4);
+}
+
+#[test]
+fn move_cursor_up_preserves_horizontal_column_across_shorter_lines() {
+    let buffer = EditBuffer::from_text("ABCDE\nX\nABCDE\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session.move_cursor_down();
+    session.move_cursor_down();
+    for _ in 0..4 {
+        session.move_cursor_right();
+    }
+
+    session.move_cursor_up();
+    session.move_cursor_up();
+
+    assert_eq!(session.view().cursor_row, 0);
+    assert_eq!(session.view().cursor_col, 4);
+}

@@ -51,6 +51,7 @@ pub struct EditorSession {
     buffer: EditBuffer,
     original_buffer: EditBuffer,
     view: ViewState,
+    desired_cursor_col: usize,
     profile: EditProfile,
     undo: UndoStack,
     message: Option<SessionMessage>,
@@ -88,6 +89,7 @@ impl EditorSession {
                 left_col: 0,
                 active_area: ActiveArea::DataArea,
             },
+            desired_cursor_col: 0,
             profile: EditProfile::default(),
             undo: UndoStack::default(),
             message: None,
@@ -153,6 +155,7 @@ impl EditorSession {
     pub fn reset_view_to_top(&mut self) {
         self.view.cursor_row = 0;
         self.view.cursor_col = 0;
+        self.desired_cursor_col = 0;
         self.view.top_row = 0;
         self.view.left_col = 0;
     }

@@ -5,7 +5,7 @@ impl EditorSession {
         self.view.cursor_row = self
             .previous_navigable_row(self.view.cursor_row)
             .unwrap_or(self.view.cursor_row);
-        self.clamp_cursor_col();
+        self.apply_cursor_col_from_desired();
         if self.view.cursor_row < self.view.top_row {
             self.view.top_row = self.view.cursor_row;
         }
@@ -19,7 +19,7 @@ impl EditorSession {
         self.view.cursor_row = self
             .next_navigable_row(self.view.cursor_row)
             .unwrap_or(self.view.cursor_row);
-        self.clamp_cursor_col();
+        self.apply_cursor_col_from_desired();
     }
 
     pub fn move_cursor_left(&mut self) {
@@ -28,19 +28,23 @@ impl EditorSession {
             .cursor_col
             .saturating_sub(1)
             .max(self.bounds_start_col());
+        self.desired_cursor_col = self.view.cursor_col;
     }
 
     pub fn move_cursor_right(&mut self) {
         let max_col = self.bounds_line_end_col();
         self.view.cursor_col = (self.view.cursor_col + 1).min(max_col);
+        self.desired_cursor_col = self.view.cursor_col;
     }
 
     pub fn move_cursor_to_line_start(&mut self) {
         self.view.cursor_col = self.bounds_start_col();
+        self.desired_cursor_col = self.view.cursor_col;
     }
 
     pub fn move_cursor_to_line_end(&mut self) {
         self.view.cursor_col = self.bounds_line_end_col();
+        self.desired_cursor_col = self.view.cursor_col;
     }
 
     pub fn row_is_excluded(&self, row: usize) -> bool {
@@ -63,7 +67,7 @@ impl EditorSession {
             self.view.cursor_row = 0;
         }
         self.view.top_row = self.view.top_row.min(self.view.cursor_row);
-        self.clamp_cursor_col();
+        self.apply_cursor_col_from_desired();
     }
 
     pub(super) fn current_row_is_excluded(&self) -> bool {
