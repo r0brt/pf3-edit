@@ -34,6 +34,14 @@ cargo run -p ispf-tui -- /path/to/file.txt
 
 Without a file argument, the editor starts with a tiny in-memory buffer.
 
+## Make Targets
+
+- `make run`
+- `make test`
+- `make lint`
+- `make fmt`
+- `make check`
+
 ## Useful Keys
 
 - `Tab`: cycle `Primary Command Field -> Line Command Field -> Data Area`
