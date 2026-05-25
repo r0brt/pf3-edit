@@ -4,11 +4,12 @@ Status note as of 2026-05-25: this file is now mainly historical. The project ha
 
 Current active follow-up block:
 
-- continue release hardening and text-workflow polish after the first `TS` / `TF` / `TE` slice
+- continue release hardening around bounds, text workflows, and viewport behavior after the first `TS` / `TF` / `TE` slice
 
 Most recent implemented follow-up items:
 
 - repo-level `Makefile` with `run`, `test`, `lint`, `fmt`, `check`, and `debug-keys` targets
+- profile-driven scroll modes (`SCROLL PAGE|HALF|CSR`) with PF7/PF8 using the active mode and the header showing the real `Scroll ===>` state
 - stronger bounds/text-workflow invariants: direct splits and `TS` reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 - minimal `TE` text-entry mode with bounds-aware wrapping
 - `TE` activation now drops straight into the data area, and `Shift+Enter` is blocked while text entry is active

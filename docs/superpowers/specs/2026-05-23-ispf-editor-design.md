@@ -46,12 +46,13 @@ Implemented highlights:
 - `TE` now hands focus directly back to the data area and blocks `Shift+Enter` while text entry is active
 - repo-level make targets for routine development and verification
 - stronger `BOUNDS` invariants: `TS` and direct line splits reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
+- real profile-driven scroll modes (`PAGE`, `HALF`, `CSR`) now drive the visible `Scroll ===>` value and PF7/PF8 viewport behavior
 
 Current focus for the next `v1.0`-oriented block:
 
-- render excluded ranges as visible placeholder rows instead of dropping them entirely from the screen model
-- support local `S` behavior on an excluded placeholder row to reveal only that excluded block
-- keep `RESET` as the global "show everything again" command
+- keep hardening release-critical editing and viewport invariants
+- make scroll behavior and `Scroll ===>` display match the active session mode instead of a static label
+- continue tightening public-facing developer UX and project documentation alongside code
 
 Still intentionally outside the implemented scope:
 

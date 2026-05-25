@@ -1,3 +1,5 @@
+use ispf_command::ScrollMode;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CapsMode {
     Off,
@@ -9,6 +11,7 @@ pub struct EditProfile {
     pub caps_mode: CapsMode,
     pub number_mode: bool,
     pub cols_mode: bool,
+    pub scroll_mode: ScrollMode,
     pub bounds: Option<(usize, usize)>,
     pub tabs: Vec<usize>,
 }
@@ -19,6 +22,7 @@ impl Default for EditProfile {
             caps_mode: CapsMode::Off,
             number_mode: false,
             cols_mode: false,
+            scroll_mode: ScrollMode::Page,
             bounds: None,
             tabs: vec![4, 8, 12, 16],
         }

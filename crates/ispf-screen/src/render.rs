@@ -1,4 +1,5 @@
 use ispf_core::{ActiveArea, EditorSession};
+use ispf_command::ScrollMode;
 
 const DEFAULT_DATA_COLUMNS: usize = 144;
 
@@ -87,7 +88,11 @@ pub fn render_screen(session: &EditorSession, _width: u16, height: u16) -> Scree
         command_value: String::new(),
         command_selected: false,
         scroll_label: "Scroll ===>".into(),
-        scroll_value: "PAGE".into(),
+        scroll_value: match session.profile().scroll_mode {
+            ScrollMode::Page => "PAGE".into(),
+            ScrollMode::Half => "HALF".into(),
+            ScrollMode::Csr => "CSR".into(),
+        },
         data_banner: show_top_banner.then(|| top_of_data_banner(DEFAULT_DATA_COLUMNS)),
         cols_line: session
             .profile()

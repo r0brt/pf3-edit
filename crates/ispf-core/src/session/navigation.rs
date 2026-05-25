@@ -1,6 +1,23 @@
 use super::*;
 
 impl EditorSession {
+    pub(super) fn effective_vertical_scroll_rows(&self) -> usize {
+        match self.profile.scroll_mode {
+            ScrollMode::Page => self.scroll_rows_hint.max(1),
+            ScrollMode::Half => (self.scroll_rows_hint / 2).max(1),
+            ScrollMode::Csr => 1,
+        }
+    }
+
+    pub(super) fn clamp_top_row(&mut self) {
+        self.view.top_row = self
+            .buffer
+            .records()
+            .len()
+            .saturating_sub(1)
+            .min(self.view.top_row);
+    }
+
     pub fn move_cursor_up(&mut self) {
         self.view.cursor_row = self
             .previous_navigable_row(self.view.cursor_row)

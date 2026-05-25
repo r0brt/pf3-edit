@@ -142,7 +142,7 @@ fn bounds_command_displays_a_bounds_indicator_line() {
 #[test]
 fn top_of_data_banner_disappears_when_scrolled_down() {
     let mut session = EditorSession::new(EditBuffer::from_text("ONE\nTWO\nTHREE\n").unwrap());
-    session.execute_primary(PrimaryCommand::Down(1)).unwrap();
+    session.execute_primary(PrimaryCommand::Down(Some(1))).unwrap();
 
     let screen = render_screen(&session, 80, 24);
 

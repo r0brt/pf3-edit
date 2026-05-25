@@ -1,3 +1,10 @@
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ScrollMode {
+    Page,
+    Half,
+    Csr,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PrimaryCommand {
     Save,
@@ -9,9 +16,10 @@ pub enum PrimaryCommand {
     RChange,
     Locate { target: usize },
     Cols,
+    Scroll(ScrollMode),
     Reset,
-    Up(usize),
-    Down(usize),
+    Up(Option<usize>),
+    Down(Option<usize>),
     Left(usize),
     Right(usize),
     Bounds(Option<(usize, usize)>),
@@ -37,6 +45,9 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
                 .map_err(|_| "invalid LOCATE target".to_string())?,
         }),
         ["COLS"] => Ok(PrimaryCommand::Cols),
+        ["SCROLL", "PAGE"] => Ok(PrimaryCommand::Scroll(ScrollMode::Page)),
+        ["SCROLL", "HALF"] => Ok(PrimaryCommand::Scroll(ScrollMode::Half)),
+        ["SCROLL", "CSR"] => Ok(PrimaryCommand::Scroll(ScrollMode::Csr)),
         ["RESET"] => Ok(PrimaryCommand::Reset),
         ["UNDO"] => Ok(PrimaryCommand::Undo),
         ["UNNUM"] => Ok(PrimaryCommand::Number(false)),
@@ -63,16 +74,18 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
                     .map_err(|_| "invalid BOUNDS right column".to_string())?
             },
         )))),
-        ["UP", _] => Ok(PrimaryCommand::Up(
+        ["UP"] => Ok(PrimaryCommand::Up(None)),
+        ["UP", _] => Ok(PrimaryCommand::Up(Some(
             parts[1]
                 .parse()
                 .map_err(|_| "invalid UP count".to_string())?,
-        )),
-        ["DOWN", _] => Ok(PrimaryCommand::Down(
+        ))),
+        ["DOWN"] => Ok(PrimaryCommand::Down(None)),
+        ["DOWN", _] => Ok(PrimaryCommand::Down(Some(
             parts[1]
                 .parse()
                 .map_err(|_| "invalid DOWN count".to_string())?,
-        )),
+        ))),
         ["LEFT", _] => Ok(PrimaryCommand::Left(
             parts[1]
                 .parse()

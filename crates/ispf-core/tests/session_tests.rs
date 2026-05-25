@@ -1,7 +1,7 @@
 use ispf_core::{
     ActiveArea, CapsMode, EditBuffer, EditProfile, EditorSession, UndoEntry, UndoStack,
 };
-use ispf_command::{PrefixCommand, PrimaryCommand};
+use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
 
 #[test]
 fn new_session_starts_in_data_area() {
@@ -22,6 +22,7 @@ fn profile_defaults_match_v0_1_design() {
     let profile = EditProfile::default();
     assert_eq!(profile.caps_mode, CapsMode::Off);
     assert!(!profile.number_mode);
+    assert_eq!(profile.scroll_mode, ScrollMode::Page);
     assert_eq!(profile.bounds, None);
     assert_eq!(profile.tabs, vec![4, 8, 12, 16]);
 }
@@ -59,8 +60,13 @@ fn execute_primary_scrolls_and_toggles_profile() {
     let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_primary(PrimaryCommand::Down(2)).unwrap();
+    session.execute_primary(PrimaryCommand::Down(Some(2))).unwrap();
     assert_eq!(session.view().top_row, 2);
+
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Half))
+        .unwrap();
+    assert_eq!(session.profile().scroll_mode, ScrollMode::Half);
 
     session.execute_primary(PrimaryCommand::Number(true)).unwrap();
     assert!(session.profile().number_mode);
@@ -72,6 +78,49 @@ fn execute_primary_scrolls_and_toggles_profile() {
         .execute_primary(PrimaryCommand::Bounds(Some((7, 70))))
         .unwrap();
     assert_eq!(session.profile().bounds, Some((7, 70)));
+}
+
+#[test]
+fn page_scroll_mode_uses_the_scroll_rows_hint() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\nG\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session.set_scroll_rows_hint(3);
+
+    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
+    assert_eq!(session.view().top_row, 3);
+
+    session.execute_primary(PrimaryCommand::Up(None)).unwrap();
+    assert_eq!(session.view().top_row, 0);
+}
+
+#[test]
+fn half_scroll_mode_uses_half_the_scroll_rows_hint() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\nG\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session.set_scroll_rows_hint(6);
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Half))
+        .unwrap();
+
+    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
+    assert_eq!(session.view().top_row, 3);
+}
+
+#[test]
+fn csr_scroll_mode_moves_by_a_single_row() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session.set_scroll_rows_hint(6);
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
+        .unwrap();
+
+    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
+    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
+    assert_eq!(session.view().top_row, 2);
+
+    session.execute_primary(PrimaryCommand::Up(None)).unwrap();
+    assert_eq!(session.view().top_row, 1);
 }
 
 #[test]

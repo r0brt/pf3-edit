@@ -1,4 +1,4 @@
-use ispf_command::{parse_prefix, parse_primary, PrefixCommand, PrimaryCommand};
+use ispf_command::{parse_prefix, parse_primary, PrefixCommand, PrimaryCommand, ScrollMode};
 
 #[test]
 fn parses_basic_primary_commands() {
@@ -9,6 +9,18 @@ fn parses_basic_primary_commands() {
     assert_eq!(parse_primary("CAPS ON").unwrap(), PrimaryCommand::Caps(true));
     assert_eq!(parse_primary("caps off").unwrap(), PrimaryCommand::Caps(false));
     assert_eq!(parse_primary("COLS").unwrap(), PrimaryCommand::Cols);
+    assert_eq!(
+        parse_primary("SCROLL PAGE").unwrap(),
+        PrimaryCommand::Scroll(ScrollMode::Page)
+    );
+    assert_eq!(
+        parse_primary("scroll half").unwrap(),
+        PrimaryCommand::Scroll(ScrollMode::Half)
+    );
+    assert_eq!(
+        parse_primary("SCROLL CSR").unwrap(),
+        PrimaryCommand::Scroll(ScrollMode::Csr)
+    );
     assert_eq!(parse_primary("BOUNDS").unwrap(), PrimaryCommand::Bounds(None));
     assert_eq!(
         parse_primary("BOUNDS 7 70").unwrap(),
@@ -56,6 +68,8 @@ fn parses_find_and_change_commands() {
         parse_primary("L 7").unwrap(),
         PrimaryCommand::Locate { target: 7 }
     );
+    assert_eq!(parse_primary("UP").unwrap(), PrimaryCommand::Up(None));
+    assert_eq!(parse_primary("DOWN").unwrap(), PrimaryCommand::Down(None));
 }
 
 #[test]

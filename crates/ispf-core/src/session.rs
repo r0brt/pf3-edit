@@ -4,7 +4,7 @@ mod transfers;
 
 use self::editing::{record_text_in_bounds, replace_first_in_bounds};
 use crate::{CapsMode, EditBuffer, EditProfile, UndoEntry, UndoStack};
-use ispf_command::{PrefixCommand, PrimaryCommand};
+use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ActiveArea {
@@ -52,6 +52,7 @@ pub struct EditorSession {
     original_buffer: EditBuffer,
     view: ViewState,
     desired_cursor_col: usize,
+    scroll_rows_hint: usize,
     profile: EditProfile,
     undo: UndoStack,
     message: Option<SessionMessage>,
@@ -90,6 +91,7 @@ impl EditorSession {
                 active_area: ActiveArea::DataArea,
             },
             desired_cursor_col: 0,
+            scroll_rows_hint: 18,
             profile: EditProfile::default(),
             undo: UndoStack::default(),
             message: None,
@@ -118,6 +120,10 @@ impl EditorSession {
 
     pub fn view(&self) -> &ViewState {
         &self.view
+    }
+
+    pub fn set_scroll_rows_hint(&mut self, rows: usize) {
+        self.scroll_rows_hint = rows.max(1);
     }
 
     pub fn buffer(&self) -> &EditBuffer {
@@ -284,9 +290,15 @@ impl EditorSession {
                 }
             }
             PrimaryCommand::Cols => self.profile.cols_mode = !self.profile.cols_mode,
-            PrimaryCommand::Down(count) => self.view.top_row += count,
+            PrimaryCommand::Scroll(mode) => self.profile.scroll_mode = mode,
+            PrimaryCommand::Down(count) => {
+                let step = count.unwrap_or_else(|| self.effective_vertical_scroll_rows());
+                self.view.top_row = self.view.top_row.saturating_add(step);
+                self.clamp_top_row();
+            }
             PrimaryCommand::Up(count) => {
-                self.view.top_row = self.view.top_row.saturating_sub(count);
+                let step = count.unwrap_or_else(|| self.effective_vertical_scroll_rows());
+                self.view.top_row = self.view.top_row.saturating_sub(step);
             }
             PrimaryCommand::Left(count) => {
                 self.view.left_col = self.view.left_col.saturating_sub(count);

@@ -5,6 +5,7 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
+ispf-command = { path = "../ispf-command" }
 ispf-core = { path = "../ispf-core" }
 unicode-width.workspace = true
 

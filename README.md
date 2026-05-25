@@ -14,7 +14,7 @@ Current implemented highlights:
 - reusable core/editor/session model
 - `Command ===>` and line command workflows
 - visible `Top of Data`, `Bottom of Data`, `=COLS>`, and `=BNDS>` lines
-- undo, save/cancel/end, find/change, locate, scroll, bounds, numbering, caps
+- undo, save/cancel/end, find/change, locate, scroll modes, bounds, numbering, caps
 - direct data-area editing with overwrite, split, join, delete, and line feed
 - line commands including `I`, `D`, `DD`, `R`, `RR`, `TS`, `TF`, `TE`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
 - stronger bounds-aware behavior, including split validation at active bounds and vertical cursor movement that preserves the intended column across shorter intermediate lines
@@ -82,6 +82,9 @@ make check
 - `LOCATE <line>`
 - `L <line>`
 - `COLS`
+- `SCROLL PAGE`
+- `SCROLL HALF`
+- `SCROLL CSR`
 - `BOUNDS`
 - `BOUNDS <left> <right>`
 - `RESET`
@@ -94,6 +97,7 @@ make check
 Line commands can also be driven from the primary command field with `:`, for example `:D2`.
 
 Primary and line commands are parsed case-insensitively. Command arguments keep their original case.
+`F7` / `F8` use the active scroll mode; explicit `UP n` / `DOWN n` still use the given count.
 
 ## Line Commands
 

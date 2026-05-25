@@ -15,6 +15,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Paragraph},
     Terminal,
 };
+use std::cell::Cell;
 use std::collections::BTreeMap;
 use std::io::{stdout, IsTerminal};
 
@@ -25,6 +26,7 @@ pub struct App {
     command_buffer: String,
     prefix_buffers: BTreeMap<usize, String>,
     line_command_markers: BTreeMap<usize, String>,
+    scroll_rows_hint: Cell<usize>,
     ui_message: Option<String>,
     should_quit: bool,
 }
@@ -41,6 +43,7 @@ impl App {
             command_buffer: String::new(),
             prefix_buffers: BTreeMap::new(),
             line_command_markers: BTreeMap::new(),
+            scroll_rows_hint: Cell::new(18),
             ui_message: None,
             should_quit: false,
         }
@@ -106,14 +109,18 @@ impl App {
                     self.session.move_cursor_to_line_end();
                 }
             }
-            AppAction::ScrollUp => self
-                .session
-                .execute_primary(PrimaryCommand::Up(1))
-                .map_err(anyhow::Error::msg)?,
-            AppAction::ScrollDown => self
-                .session
-                .execute_primary(PrimaryCommand::Down(1))
-                .map_err(anyhow::Error::msg)?,
+            AppAction::ScrollUp => {
+                self.session.set_scroll_rows_hint(self.scroll_rows_hint.get());
+                self.session
+                    .execute_primary(PrimaryCommand::Up(None))
+                    .map_err(anyhow::Error::msg)?;
+            }
+            AppAction::ScrollDown => {
+                self.session.set_scroll_rows_hint(self.scroll_rows_hint.get());
+                self.session
+                    .execute_primary(PrimaryCommand::Down(None))
+                    .map_err(anyhow::Error::msg)?;
+            }
             AppAction::ScrollLeft => self
                 .session
                 .execute_primary(PrimaryCommand::Left(8))
@@ -186,6 +193,7 @@ impl App {
     }
 
     fn screen_model(&self, width: u16, height: u16) -> ScreenModel {
+        self.scroll_rows_hint.set(height.saturating_sub(6) as usize);
         let mut screen = render_screen(&self.session, width, height);
         screen.command_value = self.command_buffer.clone();
         screen.command_selected = self.session.view().active_area == ActiveArea::CommandLine;
@@ -1111,12 +1119,27 @@ mod tests {
     #[test]
     fn scroll_actions_shift_the_viewport() {
         let mut app = App::new(EditBuffer::from_text("A\nB\nC\nD\n").unwrap());
+        app.session
+            .execute_primary(PrimaryCommand::Scroll(ispf_command::ScrollMode::Csr))
+            .unwrap();
 
         app.handle_action(AppAction::ScrollDown).unwrap();
         app.handle_action(AppAction::ScrollDown).unwrap();
         app.handle_action(AppAction::ScrollUp).unwrap();
 
         assert_eq!(app.session().view().top_row, 1);
+    }
+
+    #[test]
+    fn screen_renders_the_active_scroll_mode() {
+        let mut app = App::new(EditBuffer::from_text("A\nB\n").unwrap());
+        app.session
+            .execute_primary(PrimaryCommand::Scroll(ispf_command::ScrollMode::Half))
+            .unwrap();
+
+        let screen = app.screen_model(80, 24);
+
+        assert_eq!(screen.scroll_value, "HALF");
     }
 
     #[test]
