@@ -9,6 +9,7 @@ Current active follow-up block:
 Most recent implemented follow-up items:
 
 - minimal `TE` text-entry mode with bounds-aware wrapping
+- `TE` activation now drops straight into the data area, and `Shift+Enter` is blocked while text entry is active
 - backward focus cycling with `Shift+Tab`
 - case-insensitive primary and line command parsing
 - initial `TS` and `TF` text-workflow line commands

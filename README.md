@@ -50,7 +50,9 @@ Without a file argument, the editor starts with a tiny in-memory buffer.
 - `Ctrl+J`: move the cursor down
 - `Home` / `End`: move to line start / line end
   On many MacBook keyboards this is usually `fn + Left` / `fn + Right`.
+- `TE` / `TEn` moves focus directly into the data area
 - `Enter` in `TE` mode: finish text entry
+- `Shift+Enter` is disabled while `TE` mode is active
 
 ## Primary Commands
 

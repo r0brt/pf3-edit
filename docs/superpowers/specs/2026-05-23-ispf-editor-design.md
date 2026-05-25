@@ -43,6 +43,7 @@ Implemented highlights:
 - stronger PF-key parity including `F2=Split`, `F3=Save+Exit`, and retained `&` primary commands
 - forward and backward focus cycling with `Tab` and `Shift+Tab`
 - case-insensitive command parsing for both primary and line commands while preserving operand case
+- `TE` now hands focus directly back to the data area and blocks `Shift+Enter` while text entry is active
 
 Current focus for the next `v1.0`-oriented block:
 

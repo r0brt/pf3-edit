@@ -156,12 +156,17 @@ impl App {
             }
             AppAction::LineFeed => {
                 if self.session.view().active_area == ActiveArea::DataArea {
-                    let row = self.session.view().cursor_row;
-                    if self.session.row_is_excluded(row) {
-                        self.ui_message = Some("Cannot edit excluded lines".into());
+                    if self.session.text_entry_mode().is_some() {
+                        self.ui_message =
+                            Some("Shift+Enter is unavailable in text entry mode".into());
                     } else {
-                        self.session.insert_blank_line_after(row);
-                        self.ui_message = None;
+                        let row = self.session.view().cursor_row;
+                        if self.session.row_is_excluded(row) {
+                            self.ui_message = Some("Cannot edit excluded lines".into());
+                        } else {
+                            self.session.insert_blank_line_after(row);
+                            self.ui_message = None;
+                        }
                     }
                 }
             }
@@ -375,6 +380,9 @@ impl App {
             row_offset += after_len - before_len;
         }
         self.sync_line_command_markers();
+        if self.session.text_entry_mode().is_some() {
+            self.session.activate_data_area();
+        }
         self.ui_message = None;
 
         Ok(())
@@ -899,7 +907,7 @@ mod tests {
         app.prefix_buffers.insert(0, "TE1".into());
         app.handle_action(AppAction::Execute).unwrap();
 
-        app.handle_action(AppAction::ToggleFocus).unwrap();
+        assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
         app.handle_key(KeyEvent::from(KeyCode::Char('A'))).unwrap();
         app.handle_key(KeyEvent::from(KeyCode::Char('B'))).unwrap();
         app.handle_key(KeyEvent::from(KeyCode::Char('C'))).unwrap();
@@ -913,6 +921,38 @@ mod tests {
 
         assert_eq!(app.session().text_entry_mode(), None);
         assert_eq!(app.screen_model(80, 24).message, "Text entry completed");
+    }
+
+    #[test]
+    fn text_entry_activation_moves_focus_into_the_data_area() {
+        let mut app = App::new(EditBuffer::from_text("\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.prefix_buffers.insert(0, "TE".into());
+        app.handle_action(AppAction::Execute).unwrap();
+
+        assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
+        assert!(app.session().text_entry_mode().is_some());
+    }
+
+    #[test]
+    fn line_feed_is_blocked_while_text_entry_mode_is_active() {
+        let mut app = App::new(EditBuffer::from_text("\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.prefix_buffers.insert(0, "TE".into());
+        app.handle_action(AppAction::Execute).unwrap();
+        let before = app.session().buffer().to_text();
+
+        app.handle_action(AppAction::LineFeed).unwrap();
+
+        assert_eq!(app.session().buffer().to_text(), before);
+        assert_eq!(
+            app.screen_model(80, 24).message,
+            "Shift+Enter is unavailable in text entry mode"
+        );
     }
 
     #[test]
