@@ -52,6 +52,10 @@ fn parses_prefix_commands() {
     assert_eq!(parse_prefix("R").unwrap(), PrefixCommand::Repeat(1));
     assert_eq!(parse_prefix("R2").unwrap(), PrefixCommand::Repeat(2));
     assert_eq!(parse_prefix("RR").unwrap(), PrefixCommand::RepeatBlock);
+    assert_eq!(parse_prefix("TS").unwrap(), PrefixCommand::TextSplit(0));
+    assert_eq!(parse_prefix("TS3").unwrap(), PrefixCommand::TextSplit(3));
+    assert_eq!(parse_prefix("TF").unwrap(), PrefixCommand::TextFlow(None));
+    assert_eq!(parse_prefix("TF50").unwrap(), PrefixCommand::TextFlow(Some(50)));
     assert_eq!(parse_prefix("C").unwrap(), PrefixCommand::Copy(1));
     assert_eq!(parse_prefix("C3").unwrap(), PrefixCommand::Copy(3));
     assert_eq!(parse_prefix("CC").unwrap(), PrefixCommand::CopyBlock);

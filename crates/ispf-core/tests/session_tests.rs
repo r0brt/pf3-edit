@@ -245,6 +245,40 @@ fn split_line_at_cursor_creates_a_new_line_below() {
 }
 
 #[test]
+fn text_split_command_splits_at_the_cursor_and_inserts_requested_blank_lines() {
+    let buffer = EditBuffer::from_text("ALPHA BETA GAMMA\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.move_cursor_right();
+    session.move_cursor_right();
+    session.move_cursor_right();
+    session.move_cursor_right();
+    session.move_cursor_right();
+    session.execute_prefix(0, PrefixCommand::TextSplit(2)).unwrap();
+
+    assert_eq!(session.buffer().to_text(), "ALPHA\n\n\n BETA GAMMA\n");
+    assert_eq!(session.view().cursor_row, 3);
+    assert_eq!(session.view().cursor_col, 0);
+}
+
+#[test]
+fn text_flow_command_rewraps_a_paragraph_within_bounds() {
+    let buffer = EditBuffer::from_text("ALPHA BETA\nGAMMA DELTA\n\nOMEGA\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((1, 8))))
+        .unwrap();
+    session.execute_prefix(0, PrefixCommand::TextFlow(None)).unwrap();
+
+    assert_eq!(
+        session.buffer().to_text(),
+        "ALPHA\nBETA\nGAMMA\nDELTA\n\nOMEGA\n"
+    );
+    assert_eq!(session.view().cursor_row, 0);
+}
+
+#[test]
 fn undo_restores_a_split_line() {
     let buffer = EditBuffer::from_text("ABCD\n").unwrap();
     let mut session = EditorSession::new(buffer);

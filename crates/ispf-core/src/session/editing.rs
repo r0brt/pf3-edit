@@ -1,4 +1,5 @@
 use super::*;
+use crate::Record;
 
 impl EditorSession {
     pub fn insert_blank_line_after(&mut self, row: usize) {
@@ -208,6 +209,35 @@ impl EditorSession {
                     .replace_line(index, &previous)
                     .ok_or_else(|| "invalid row".to_string())
             }
+            Some(UndoEntry::TextSplit {
+                index,
+                previous,
+                blank_lines,
+            }) => {
+                for _ in 0..=blank_lines {
+                    self.buffer
+                        .delete_at(index + 1)
+                        .ok_or_else(|| "invalid row".to_string())?;
+                }
+                self.buffer
+                    .replace_line(index, &previous)
+                    .ok_or_else(|| "invalid row".to_string())
+            }
+            Some(UndoEntry::ReflowParagraph {
+                start,
+                previous,
+                new_len,
+            }) => {
+                for _ in 0..new_len {
+                    self.buffer
+                        .delete_at(start)
+                        .ok_or_else(|| "invalid row".to_string())?;
+                }
+                for (offset, record) in previous.into_iter().enumerate() {
+                    self.buffer.insert_record_at(start + offset, record);
+                }
+                Ok(())
+            }
             None => Ok(()),
         }
     }
@@ -279,6 +309,101 @@ impl EditorSession {
             self.undo.push(UndoEntry::ReplacedLine { index, previous });
         }
         Ok(())
+    }
+
+    pub(super) fn text_split_at_cursor(
+        &mut self,
+        row: usize,
+        blank_lines: usize,
+    ) -> Result<(), String> {
+        if self.current_row_is_excluded() {
+            return Err("Cannot edit excluded lines".into());
+        }
+
+        let current = self
+            .buffer
+            .records()
+            .get(row)
+            .ok_or_else(|| "invalid row".to_string())?
+            .text
+            .clone();
+        let (left, right) = split_text_at(&current, self.view.cursor_col)?;
+
+        self.buffer
+            .replace_line(row, &left)
+            .ok_or_else(|| "invalid row".to_string())?;
+        for offset in 0..blank_lines {
+            self.buffer.insert_after(row + offset, "");
+        }
+        self.buffer.insert_after(row + blank_lines, &right);
+        self.undo.push(UndoEntry::TextSplit {
+            index: row,
+            previous: current,
+            blank_lines,
+        });
+        self.view.cursor_row = row + blank_lines + 1;
+        self.view.cursor_col = 0;
+        Ok(())
+    }
+
+    pub(super) fn text_flow_paragraph(
+        &mut self,
+        start: usize,
+        requested_width: Option<usize>,
+    ) -> Result<(), String> {
+        let end = self.paragraph_end(start);
+        if end < start {
+            return Ok(());
+        }
+
+        let previous: Vec<Record> = self.buffer.records()[start..=end].to_vec();
+        let width = self.text_flow_width(requested_width);
+        let flowed = flow_paragraph_lines(&previous, self.profile.bounds, width);
+        let new_len = flowed.len();
+
+        for _ in start..=end {
+            self.buffer
+                .delete_at(start)
+                .ok_or_else(|| "invalid row".to_string())?;
+        }
+        for (offset, line) in flowed.iter().enumerate() {
+            self.buffer.insert_before(start + offset, line);
+        }
+
+        self.undo.push(UndoEntry::ReflowParagraph {
+            start,
+            previous,
+            new_len,
+        });
+        self.view.cursor_row = start;
+        self.view.cursor_col = self.bounds_start_col();
+        Ok(())
+    }
+
+    fn paragraph_end(&self, start: usize) -> usize {
+        let records = self.buffer.records();
+        let mut end = start;
+        while end < records.len() {
+            let record = &records[end];
+            if record.excluded || record.text.trim().is_empty() {
+                break;
+            }
+            end += 1;
+        }
+
+        end.saturating_sub(1).max(start)
+    }
+
+    fn text_flow_width(&self, requested_width: Option<usize>) -> usize {
+        let bounds_width = self
+            .profile
+            .bounds
+            .map(|(left, right)| right.saturating_sub(left).saturating_add(1))
+            .unwrap_or(72);
+
+        requested_width
+            .map(|width| width.min(bounds_width).max(1))
+            .unwrap_or(bounds_width.max(1))
     }
 }
 
@@ -404,4 +529,49 @@ fn convert_case_in_bounds(text: &str, bounds: Option<(usize, usize)>, uppercase:
             }
         })
         .collect()
+}
+
+fn flow_paragraph_lines(records: &[Record], bounds: Option<(usize, usize)>, width: usize) -> Vec<String> {
+    let left_padding = bounds.map(|(left, _)| left.saturating_sub(1)).unwrap_or(0);
+    let words: Vec<String> = records
+        .iter()
+        .flat_map(|record| {
+            record
+                .text
+                .split_whitespace()
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
+        .collect();
+
+    if words.is_empty() {
+        return vec![String::new()];
+    }
+
+    let mut lines = Vec::new();
+    let mut current = String::new();
+
+    for word in words {
+        let next_len = if current.is_empty() {
+            word.len()
+        } else {
+            current.len() + 1 + word.len()
+        };
+
+        if !current.is_empty() && next_len > width {
+            lines.push(format!("{}{}", " ".repeat(left_padding), current));
+            current = word;
+        } else if current.is_empty() {
+            current = word;
+        } else {
+            current.push(' ');
+            current.push_str(&word);
+        }
+    }
+
+    if !current.is_empty() {
+        lines.push(format!("{}{}", " ".repeat(left_padding), current));
+    }
+
+    lines
 }

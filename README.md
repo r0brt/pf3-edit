@@ -16,7 +16,7 @@ Current implemented highlights:
 - visible `Top of Data`, `Bottom of Data`, `=COLS>`, and `=BNDS>` lines
 - undo, save/cancel/end, find/change, locate, scroll, bounds, numbering, caps
 - direct data-area editing with overwrite, split, join, delete, and line feed
-- line commands including `I`, `D`, `DD`, `R`, `RR`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
+- line commands including `I`, `D`, `DD`, `R`, `RR`, `TS`, `TF`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
 
 Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
 
@@ -78,6 +78,8 @@ Line commands can also be driven from the primary command field with `:`, for ex
 - `I`, `I3`
 - `D`, `D2`, `DD`
 - `R`, `R4`, `RR`
+- `TS`, `TS3`
+- `TF`, `TF50`
 - `C`, `C2`, `CC`
 - `M`, `M2`, `MM`
 - `A`, `B`, `O`, `OO`

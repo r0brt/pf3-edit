@@ -4,12 +4,11 @@ Status note as of 2026-05-25: this file is now mainly historical. The project ha
 
 Current active follow-up block:
 
-- improve the excluded-line screen model so contiguous excluded ranges render as visible placeholder rows
-- add local `S` behavior against those placeholder rows
-- preserve `RESET` as the global unexclude command
+- continue the text-workflow block with minimal `TE` behavior on top of the new `TS` and `TF` support
 
 Most recent implemented follow-up items:
 
+- initial `TS` and `TF` text-workflow line commands
 - excluded-block placeholder rows plus local `S`
 - stronger PF-key parity for `F2=Split`
 - retained `&` command-line primary commands

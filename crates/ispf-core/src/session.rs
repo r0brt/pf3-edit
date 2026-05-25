@@ -381,6 +381,23 @@ impl EditorSession {
                     });
                 }
             }
+            PrefixCommand::TextSplit(blank_lines) => {
+                self.text_split_at_cursor(row, blank_lines)?;
+                self.message = Some(SessionMessage {
+                    text: match blank_lines {
+                        0 => "Text split completed".into(),
+                        count => format!("Text split completed with {count} blank lines"),
+                    },
+                    is_error: false,
+                });
+            }
+            PrefixCommand::TextFlow(width) => {
+                self.text_flow_paragraph(row, width)?;
+                self.message = Some(SessionMessage {
+                    text: "Text flow completed".into(),
+                    is_error: false,
+                });
+            }
             PrefixCommand::Copy(count) => {
                 let last_row = self.buffer.records().len().saturating_sub(1);
                 let end = row.saturating_add(count.saturating_sub(1)).min(last_row);

@@ -5,6 +5,8 @@ pub enum PrefixCommand {
     DeleteBlock,
     Repeat(usize),
     RepeatBlock,
+    TextSplit(usize),
+    TextFlow(Option<usize>),
     Copy(usize),
     CopyBlock,
     Move(usize),
@@ -37,6 +39,17 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
         "O" => Ok(PrefixCommand::Overlay),
         "S" => Ok(PrefixCommand::Show),
         "X" => Ok(PrefixCommand::Exclude),
+        other if matches_multi_letter_counted_line_command(other, "TS") => Ok(PrefixCommand::TextSplit(
+            other
+                .strip_prefix("TS")
+                .filter(|suffix| !suffix.is_empty())
+                .and_then(|suffix| suffix.parse().ok())
+                .unwrap_or(0),
+        )),
+        other if matches_multi_letter_counted_line_command(other, "TF") => {
+            let width = parse_multi_letter_count(other, 2);
+            Ok(PrefixCommand::TextFlow((width != 1 || other.len() > 2).then_some(width)))
+        }
         other if matches_multi_letter_counted_line_command(other, "LC") => {
             Ok(PrefixCommand::Lowercase(parse_multi_letter_count(other, 2)))
         }
