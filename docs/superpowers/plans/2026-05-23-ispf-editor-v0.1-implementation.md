@@ -10,6 +10,7 @@ Most recent implemented follow-up items:
 
 - repo-level `Makefile` with `run`, `test`, `lint`, `fmt`, `check`, and `debug-keys` targets
 - profile-driven scroll modes (`SCROLL PAGE|HALF|CSR`) with PF7/PF8 using the active mode and the header showing the real `Scroll ===>` state
+- public CLI polish with a `pf3-edit` binary, `--help`, `--version`, `--debug-keys`, and a documented `cargo install --path crates/ispf-tui` path
 - stronger bounds/text-workflow invariants: direct splits and `TS` reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 - minimal `TE` text-entry mode with bounds-aware wrapping
 - `TE` activation now drops straight into the data area, and `Shift+Enter` is blocked while text entry is active

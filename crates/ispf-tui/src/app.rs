@@ -18,6 +18,7 @@ use ratatui::{
 use std::cell::Cell;
 use std::collections::BTreeMap;
 use std::io::{stdout, IsTerminal};
+use std::path::Path;
 
 use crate::input::AppAction;
 
@@ -638,9 +639,9 @@ fn initialize_startup_focus(app: &mut App) {
     app.session.activate_command_line();
 }
 
-pub fn run() -> Result<()> {
-    let buffer = if let Some(path) = std::env::args().nth(1) {
-        EditBuffer::from_path(std::path::Path::new(&path))?
+pub fn run(path: Option<&Path>) -> Result<()> {
+    let buffer = if let Some(path) = path {
+        EditBuffer::from_path(path)?
     } else {
         EditBuffer::from_text("ISPF EDITOR\n").unwrap()
     };
@@ -664,6 +665,31 @@ pub fn run() -> Result<()> {
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
+
+    run_result
+}
+
+pub fn run_debug_keys() -> Result<()> {
+    if !stdout().is_terminal() {
+        anyhow::bail!("--debug-keys requires an interactive terminal");
+    }
+
+    enable_raw_mode()?;
+    let mut out = stdout();
+    execute!(out, EnterAlternateScreen)?;
+    println!("Press keys to inspect events. Press Esc to quit.");
+
+    let run_result = loop {
+        if let Event::Key(key) = event::read()? {
+            println!("{key:?}");
+            if key.code == KeyCode::Esc {
+                break Ok(());
+            }
+        }
+    };
+
+    disable_raw_mode()?;
+    execute!(stdout(), LeaveAlternateScreen)?;
 
     run_result
 }

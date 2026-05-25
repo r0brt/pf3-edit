@@ -35,6 +35,26 @@ cargo run -p ispf-tui -- /path/to/file.txt
 
 Without a file argument, the editor starts with a tiny in-memory buffer.
 
+## Install
+
+```bash
+cargo install --path crates/ispf-tui
+```
+
+This installs the executable as:
+
+```bash
+pf3-edit
+```
+
+Useful top-level CLI flags:
+
+```bash
+pf3-edit --help
+pf3-edit --version
+pf3-edit --debug-keys
+```
+
 ## Make Targets
 
 - `make run`

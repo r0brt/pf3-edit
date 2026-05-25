@@ -47,6 +47,7 @@ Implemented highlights:
 - repo-level make targets for routine development and verification
 - stronger `BOUNDS` invariants: `TS` and direct line splits reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 - real profile-driven scroll modes (`PAGE`, `HALF`, `CSR`) now drive the visible `Scroll ===>` value and PF7/PF8 viewport behavior
+- public CLI polish: the binary is exposed as `pf3-edit`, supports `--help`, `--version`, and `--debug-keys`, and documents a direct `cargo install --path crates/ispf-tui` workflow
 
 Current focus for the next `v1.0`-oriented block:
 
