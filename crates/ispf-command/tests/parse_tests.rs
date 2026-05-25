@@ -61,6 +61,25 @@ fn parses_find_and_change_commands() {
         }
     );
     assert_eq!(
+        parse_primary("FIND \"Alpha Beta\"").unwrap(),
+        PrimaryCommand::Find {
+            pattern: "Alpha Beta".into()
+        }
+    );
+    assert_eq!(
+        parse_primary("FIND 'Alpha Beta'").unwrap(),
+        PrimaryCommand::Find {
+            pattern: "Alpha Beta".into()
+        }
+    );
+    assert_eq!(
+        parse_primary("CHANGE \"OLD VALUE\" \"NEW VALUE\"").unwrap(),
+        PrimaryCommand::Change {
+            from: "OLD VALUE".into(),
+            to: "NEW VALUE".into()
+        }
+    );
+    assert_eq!(
         parse_primary("LOCATE 12").unwrap(),
         PrimaryCommand::Locate { target: 12 }
     );

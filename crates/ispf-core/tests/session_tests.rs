@@ -408,7 +408,7 @@ fn execute_prefix_delete_count_removes_multiple_lines() {
 
 #[test]
 fn find_positions_cursor_on_matching_record() {
-    let buffer = EditBuffer::from_text("ZERO\nALPHA\nOMEGA\n").unwrap();
+    let buffer = EditBuffer::from_text("ZERO\nXX ALPHA YY\nOMEGA\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
     session
@@ -418,6 +418,7 @@ fn find_positions_cursor_on_matching_record() {
         .unwrap();
 
     assert_eq!(session.view().cursor_row, 1);
+    assert_eq!(session.view().cursor_col, 3);
 }
 
 #[test]
@@ -446,6 +447,22 @@ fn change_replaces_text_in_place() {
         .unwrap();
 
     assert_eq!(session.buffer().records()[0].text(), "NEW VALUE");
+}
+
+#[test]
+fn change_positions_cursor_on_the_changed_text() {
+    let buffer = EditBuffer::from_text("XX OLD YY\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Change {
+            from: "OLD".into(),
+            to: "NEW".into(),
+        })
+        .unwrap();
+
+    assert_eq!(session.buffer().records()[0].text(), "XX NEW YY");
+    assert_eq!(session.view().cursor_col, 3);
 }
 
 #[test]

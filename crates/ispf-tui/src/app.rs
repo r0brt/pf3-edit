@@ -1404,6 +1404,24 @@ mod tests {
     }
 
     #[test]
+    fn repeated_change_keeps_the_cursor_on_the_changed_text() {
+        let mut app = App::new(EditBuffer::from_text("XX OLD YY\nZZ OLD WW\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        for ch in "CHANGE OLD NEW".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+        assert_eq!(app.session().view().cursor_col, 3);
+
+        app.handle_action(AppAction::CursorDown).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(6))).unwrap();
+
+        assert_eq!(app.session().buffer().records()[1].text(), "ZZ NEW WW");
+        assert_eq!(app.session().view().cursor_col, 3);
+    }
+
+    #[test]
     fn prefix_exclude_hides_the_row_and_moves_selection_to_the_next_visible_line() {
         let mut app = App::new(EditBuffer::from_text("A\nB\nC\n").unwrap());
 

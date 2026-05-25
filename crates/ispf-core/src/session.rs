@@ -2,7 +2,7 @@ mod editing;
 mod navigation;
 mod transfers;
 
-use self::editing::{record_text_in_bounds, replace_first_in_bounds};
+use self::editing::{find_first_in_bounds, replace_first_in_bounds};
 use crate::{CapsMode, EditBuffer, EditProfile, UndoEntry, UndoStack};
 use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
 
@@ -211,14 +211,20 @@ impl EditorSession {
             }
             PrimaryCommand::Find { pattern } => {
                 self.last_find = Some(pattern.clone());
-                if let Some(index) = self
+                if let Some((index, col)) = self
                     .buffer
                     .records()
                     .iter()
-                    .position(|record| record_text_in_bounds(record.text.as_str(), self.profile.bounds).contains(&pattern))
+                    .enumerate()
+                    .find_map(|(index, record)| {
+                        find_first_in_bounds(record.text.as_str(), &pattern, self.profile.bounds)
+                            .map(|col| (index, col))
+                    })
                 {
                     self.view.cursor_row = index;
                     self.view.top_row = index;
+                    self.view.cursor_col = col;
+                    self.desired_cursor_col = col;
                     self.message = Some(SessionMessage {
                         text: "FIND completed".into(),
                         is_error: false,
@@ -239,11 +245,15 @@ impl EditorSession {
             }
             PrimaryCommand::Change { from, to } => {
                 self.last_change = Some((from.clone(), to.clone()));
-                if let Some(index) = self
+                if let Some((index, col)) = self
                     .buffer
                     .records()
                     .iter()
-                    .position(|record| record_text_in_bounds(record.text.as_str(), self.profile.bounds).contains(&from))
+                    .enumerate()
+                    .find_map(|(index, record)| {
+                        find_first_in_bounds(record.text.as_str(), &from, self.profile.bounds)
+                            .map(|col| (index, col))
+                    })
                 {
                     let previous = self.buffer.records()[index].text.clone();
                     let updated = replace_first_in_bounds(&previous, &from, &to, self.profile.bounds)
@@ -253,6 +263,8 @@ impl EditorSession {
                         .ok_or_else(|| "invalid row".to_string())?;
                     self.view.cursor_row = index;
                     self.view.top_row = index;
+                    self.view.cursor_col = col;
+                    self.desired_cursor_col = col;
                     self.undo.push(UndoEntry::ReplacedLine { index, previous });
                     self.message = Some(SessionMessage {
                         text: "CHANGE completed".into(),

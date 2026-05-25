@@ -29,8 +29,12 @@ pub enum PrimaryCommand {
 }
 
 pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
-    let parts: Vec<&str> = input.split_whitespace().collect();
-    let upper: Vec<String> = parts.iter().map(|part| part.to_ascii_uppercase()).collect();
+    let parts = tokenize_primary(input)?;
+    let part_refs: Vec<&str> = parts.iter().map(String::as_str).collect();
+    let upper: Vec<String> = part_refs
+        .iter()
+        .map(|part| part.to_ascii_uppercase())
+        .collect();
     let upper_parts: Vec<&str> = upper.iter().map(String::as_str).collect();
 
     match upper_parts.as_slice() {
@@ -58,8 +62,8 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
             pattern: parts[1..].join(" "),
         }),
         ["CHANGE", _, _] => Ok(PrimaryCommand::Change {
-            from: parts[1].into(),
-            to: parts[2].into(),
+            from: parts[1].clone(),
+            to: parts[2].clone(),
         }),
         ["BOUNDS"] => Ok(PrimaryCommand::Bounds(None)),
         ["BOUNDS", _, _] => Ok(PrimaryCommand::Bounds(Some((
@@ -98,4 +102,38 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
         )),
         _ => Err(format!("unknown primary command: {input}")),
     }
+}
+
+fn tokenize_primary(input: &str) -> Result<Vec<String>, String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+
+    for ch in input.chars() {
+        match quote {
+            Some(active) if ch == active => {
+                quote = None;
+            }
+            Some(_) => current.push(ch),
+            None if ch == '"' || ch == '\'' => {
+                quote = Some(ch);
+            }
+            None if ch.is_whitespace() => {
+                if !current.is_empty() {
+                    tokens.push(std::mem::take(&mut current));
+                }
+            }
+            None => current.push(ch),
+        }
+    }
+
+    if quote.is_some() {
+        return Err("unterminated quoted argument".into());
+    }
+
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+
+    Ok(tokens)
 }

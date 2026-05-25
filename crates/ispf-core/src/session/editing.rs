@@ -611,14 +611,6 @@ pub(super) fn bounded_char_range(text: &str, bounds: Option<(usize, usize)>) -> 
     }
 }
 
-pub(super) fn record_text_in_bounds(text: &str, bounds: Option<(usize, usize)>) -> String {
-    let (start, end) = bounded_char_range(text, bounds);
-    text.chars()
-        .skip(start)
-        .take(end.saturating_sub(start))
-        .collect()
-}
-
 fn char_to_byte_index(text: &str, char_index: usize) -> usize {
     if char_index == 0 {
         return 0;
@@ -635,14 +627,34 @@ pub(super) fn replace_first_in_bounds(
     to: &str,
     bounds: Option<(usize, usize)>,
 ) -> Option<String> {
+    let (start_char, found, _) = bounded_match_position(text, from, bounds)?;
+    let start_byte = char_to_byte_index(text, start_char);
+    let absolute = start_byte + found;
+    let after = absolute + from.len();
+    Some(format!("{}{}{}", &text[..absolute], to, &text[after..]))
+}
+
+pub(super) fn find_first_in_bounds(
+    text: &str,
+    pattern: &str,
+    bounds: Option<(usize, usize)>,
+) -> Option<usize> {
+    let (start_char, found, bounded) = bounded_match_position(text, pattern, bounds)?;
+    let matched_chars = bounded[..found].chars().count();
+    Some(start_char + matched_chars)
+}
+
+fn bounded_match_position<'a>(
+    text: &'a str,
+    pattern: &str,
+    bounds: Option<(usize, usize)>,
+) -> Option<(usize, usize, &'a str)> {
     let (start_char, end_char) = bounded_char_range(text, bounds);
     let start_byte = char_to_byte_index(text, start_char);
     let end_byte = char_to_byte_index(text, end_char);
     let bounded = &text[start_byte..end_byte];
-    let found = bounded.find(from)?;
-    let absolute = start_byte + found;
-    let after = absolute + from.len();
-    Some(format!("{}{}{}", &text[..absolute], to, &text[after..]))
+    let found = bounded.find(pattern)?;
+    Some((start_char, found, bounded))
 }
 
 fn convert_case_in_bounds(text: &str, bounds: Option<(usize, usize)>, uppercase: bool) -> String {
