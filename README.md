@@ -57,6 +57,9 @@ pf3-edit --debug-keys
 
 ## Make Targets
 
+The `Makefile` is only a small developer convenience layer for people working from a cloned repo.
+You do not need it to install or use `pf3-edit`; it just shortens the most common local commands.
+
 - `make run`
 - `make test`
 - `make lint`
@@ -136,10 +139,10 @@ Primary and line commands are parsed case-insensitively. Command arguments keep 
 
 ## Project Layout
 
-- [crates/ispf-core](/Users/robert/code/ispf-editor/crates/ispf-core): editor state, buffer, session logic, undo, command execution
-- [crates/ispf-command](/Users/robert/code/ispf-editor/crates/ispf-command): parsing for primary and line commands
-- [crates/ispf-screen](/Users/robert/code/ispf-editor/crates/ispf-screen): render model for the TUI
-- [crates/ispf-tui](/Users/robert/code/ispf-editor/crates/ispf-tui): terminal runtime and interaction layer
+- [`crates/ispf-core`](crates/ispf-core): editor state, buffer, session logic, undo, command execution
+- [`crates/ispf-command`](crates/ispf-command): parsing for primary and line commands
+- [`crates/ispf-screen`](crates/ispf-screen): render model for the TUI
+- [`crates/ispf-tui`](crates/ispf-tui): terminal runtime and interaction layer
 
 ## Verification
 
@@ -150,6 +153,6 @@ cargo clippy --all-targets --all-features -- -D warnings
 
 ## Superpowers Docs
 
-- Contribution guide: [CONTRIBUTING.md](/Users/robert/code/ispf-editor/CONTRIBUTING.md)
-- Spec: [2026-05-23-ispf-editor-design.md](/Users/robert/code/ispf-editor/docs/superpowers/specs/2026-05-23-ispf-editor-design.md)
-- Plan: [2026-05-23-ispf-editor-v0.1-implementation.md](/Users/robert/code/ispf-editor/docs/superpowers/plans/2026-05-23-ispf-editor-v0.1-implementation.md)
+- Contribution guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- Spec: [`2026-05-23-ispf-editor-design.md`](docs/superpowers/specs/2026-05-23-ispf-editor-design.md)
+- Plan: [`2026-05-23-ispf-editor-v0.1-implementation.md`](docs/superpowers/plans/2026-05-23-ispf-editor-v0.1-implementation.md)
