@@ -380,6 +380,94 @@ impl EditorSession {
         Ok(())
     }
 
+    pub(super) fn begin_text_entry(
+        &mut self,
+        row: usize,
+        extra_lines: usize,
+    ) -> Result<(), String> {
+        if self
+            .buffer
+            .records()
+            .get(row)
+            .ok_or_else(|| "invalid row".to_string())?
+            .excluded
+        {
+            return Err("Cannot edit excluded lines".into());
+        }
+
+        for offset in 0..extra_lines {
+            self.buffer.insert_after(row + offset, "");
+            self.undo.push(UndoEntry::InsertedLine {
+                index: row + offset + 1,
+            });
+        }
+
+        self.text_entry = Some(TextEntryMode {
+            start_row: row,
+            end_row: row + extra_lines,
+        });
+        self.view.cursor_row = row;
+        self.view.cursor_col = self.bounds_start_col();
+        Ok(())
+    }
+
+    pub fn end_text_entry(&mut self) {
+        self.text_entry = None;
+    }
+
+    pub fn text_entry_insert_char(&mut self, ch: char) -> Result<(), String> {
+        let Some(mut mode) = self.text_entry else {
+            return self.insert_char(ch);
+        };
+
+        if self.current_row_is_excluded() {
+            return Err("Cannot edit excluded lines".into());
+        }
+
+        let (bounds_start, bounds_end) = self.edit_bounds();
+        if self.view.cursor_col < bounds_start {
+            self.view.cursor_col = bounds_start;
+        }
+        if self.view.cursor_col > bounds_end {
+            self.advance_text_entry_row(&mut mode)?;
+            self.view.cursor_col = bounds_start;
+        }
+
+        let row = self.view.cursor_row;
+        let previous = self
+            .buffer
+            .records()
+            .get(row)
+            .ok_or_else(|| "invalid row".to_string())?
+            .text
+            .clone();
+        let updated = write_char_with_padding(&previous, self.view.cursor_col, ch);
+        self.buffer
+            .replace_line(row, &updated)
+            .ok_or_else(|| "invalid row".to_string())?;
+        self.undo.push(UndoEntry::ReplacedLine {
+            index: row,
+            previous,
+        });
+        self.view.cursor_col += 1;
+        self.text_entry = Some(mode);
+        Ok(())
+    }
+
+    fn advance_text_entry_row(&mut self, mode: &mut TextEntryMode) -> Result<(), String> {
+        if self.view.cursor_row >= mode.end_row {
+            let insert_at = mode.end_row;
+            self.buffer.insert_after(insert_at, "");
+            self.undo.push(UndoEntry::InsertedLine {
+                index: insert_at + 1,
+            });
+            mode.end_row += 1;
+        }
+
+        self.view.cursor_row = self.view.cursor_row.saturating_add(1).min(mode.end_row);
+        Ok(())
+    }
+
     fn paragraph_end(&self, start: usize) -> usize {
         let records = self.buffer.records();
         let mut end = start;
@@ -465,6 +553,21 @@ fn split_text_at(text: &str, column: usize) -> Result<(String, String), String> 
     let left = chars[..column].iter().collect();
     let right = chars[column..].iter().collect();
     Ok((left, right))
+}
+
+fn write_char_with_padding(text: &str, column: usize, ch: char) -> String {
+    let mut chars: Vec<char> = text.chars().collect();
+    while chars.len() < column {
+        chars.push(' ');
+    }
+
+    if column == chars.len() {
+        chars.push(ch);
+    } else {
+        chars[column] = ch;
+    }
+
+    chars.into_iter().collect()
 }
 
 pub(super) fn bounded_char_range(text: &str, bounds: Option<(usize, usize)>) -> (usize, usize) {

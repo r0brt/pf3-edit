@@ -4,10 +4,11 @@ Status note as of 2026-05-25: this file is now mainly historical. The project ha
 
 Current active follow-up block:
 
-- continue the text-workflow block with minimal `TE` behavior on top of the new `TS` and `TF` support
+- continue release hardening and text-workflow polish after the first `TS` / `TF` / `TE` slice
 
 Most recent implemented follow-up items:
 
+- minimal `TE` text-entry mode with bounds-aware wrapping
 - backward focus cycling with `Shift+Tab`
 - case-insensitive primary and line command parsing
 - initial `TS` and `TF` text-workflow line commands

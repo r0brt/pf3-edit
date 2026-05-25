@@ -75,6 +75,8 @@ fn parses_prefix_commands() {
     assert_eq!(parse_prefix("TF").unwrap(), PrefixCommand::TextFlow(None));
     assert_eq!(parse_prefix("tf50").unwrap(), PrefixCommand::TextFlow(Some(50)));
     assert_eq!(parse_prefix("TF50").unwrap(), PrefixCommand::TextFlow(Some(50)));
+    assert_eq!(parse_prefix("TE").unwrap(), PrefixCommand::TextEntry(0));
+    assert_eq!(parse_prefix("te3").unwrap(), PrefixCommand::TextEntry(3));
     assert_eq!(parse_prefix("C").unwrap(), PrefixCommand::Copy(1));
     assert_eq!(parse_prefix("C3").unwrap(), PrefixCommand::Copy(3));
     assert_eq!(parse_prefix("CC").unwrap(), PrefixCommand::CopyBlock);

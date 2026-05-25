@@ -35,7 +35,7 @@ Implemented highlights:
 - Rust workspace with `ispf-core`, `ispf-command`, `ispf-screen`, and `ispf-tui`
 - visible ISPF-like TUI shell with menu bar, `Command ===>`, `Scroll ===>`, PF-key legend, and data banners
 - working primary commands including `SAVE`, `CANCEL`, `END`, `FIND`, `RFIND`, `CHANGE`, `RCHANGE`, `LOCATE`, `COLS`, `BOUNDS`, `RESET`, `UNDO`, `NUMBER`, `UNNUM`, and `CAPS`
-- working line commands including `I`, `In`, `D`, `Dn`, `DD`, `R`, `Rn`, `RR`, `TS`, `TSn`, `TF`, `TFn`, `C`, `Cn`, `CC`, `M`, `Mn`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, and `UCC`
+- working line commands including `I`, `In`, `D`, `Dn`, `DD`, `R`, `Rn`, `RR`, `TS`, `TSn`, `TF`, `TFn`, `TE`, `TEn`, `C`, `Cn`, `CC`, `M`, `Mn`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, and `UCC`
 - direct data-area editing with overwrite behavior, delete, join, split, line feed, undo, and stronger bounds-aware cursor/edit behavior
 - visible `=COLS>` and `=BNDS>` support
 - overlay support through `O` and `OO`

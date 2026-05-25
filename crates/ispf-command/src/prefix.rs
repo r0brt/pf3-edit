@@ -7,6 +7,7 @@ pub enum PrefixCommand {
     RepeatBlock,
     TextSplit(usize),
     TextFlow(Option<usize>),
+    TextEntry(usize),
     Copy(usize),
     CopyBlock,
     Move(usize),
@@ -51,6 +52,13 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
             let width = parse_multi_letter_count(other, 2);
             Ok(PrefixCommand::TextFlow((width != 1 || other.len() > 2).then_some(width)))
         }
+        other if matches_multi_letter_counted_line_command(other, "TE") => Ok(PrefixCommand::TextEntry(
+            other
+                .strip_prefix("TE")
+                .filter(|suffix| !suffix.is_empty())
+                .and_then(|suffix| suffix.parse().ok())
+                .unwrap_or(0),
+        )),
         other if matches_multi_letter_counted_line_command(other, "LC") => {
             Ok(PrefixCommand::Lowercase(parse_multi_letter_count(other, 2)))
         }

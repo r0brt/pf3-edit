@@ -16,7 +16,7 @@ Current implemented highlights:
 - visible `Top of Data`, `Bottom of Data`, `=COLS>`, and `=BNDS>` lines
 - undo, save/cancel/end, find/change, locate, scroll, bounds, numbering, caps
 - direct data-area editing with overwrite, split, join, delete, and line feed
-- line commands including `I`, `D`, `DD`, `R`, `RR`, `TS`, `TF`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
+- line commands including `I`, `D`, `DD`, `R`, `RR`, `TS`, `TF`, `TE`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
 
 Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
 
@@ -50,6 +50,7 @@ Without a file argument, the editor starts with a tiny in-memory buffer.
 - `Ctrl+J`: move the cursor down
 - `Home` / `End`: move to line start / line end
   On many MacBook keyboards this is usually `fn + Left` / `fn + Right`.
+- `Enter` in `TE` mode: finish text entry
 
 ## Primary Commands
 
@@ -83,6 +84,7 @@ Primary and line commands are parsed case-insensitively. Command arguments keep 
 - `R`, `R4`, `RR`
 - `TS`, `TS3`
 - `TF`, `TF50`
+- `TE`, `TE3`
 - `C`, `C2`, `CC`
 - `M`, `M2`, `MM`
 - `A`, `B`, `O`, `OO`

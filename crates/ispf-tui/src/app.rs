@@ -230,7 +230,12 @@ impl App {
             ActiveArea::DataArea => {
                 match key.code {
                     KeyCode::Char(ch) => {
-                        match self.session.insert_char(ch) {
+                        let result = if self.session.text_entry_mode().is_some() {
+                            self.session.text_entry_insert_char(ch)
+                        } else {
+                            self.session.insert_char(ch)
+                        };
+                        match result {
                             Ok(()) => self.ui_message = None,
                             Err(err) => self.ui_message = Some(err),
                         }
@@ -246,9 +251,14 @@ impl App {
                         Ok(())
                     }
                     KeyCode::Enter => {
-                        match self.session.split_line_at_cursor() {
-                            Ok(()) => self.ui_message = None,
-                            Err(err) => self.ui_message = Some(err),
+                        if self.session.text_entry_mode().is_some() {
+                            self.session.end_text_entry();
+                            self.ui_message = Some("Text entry completed".into());
+                        } else {
+                            match self.session.split_line_at_cursor() {
+                                Ok(()) => self.ui_message = None,
+                                Err(err) => self.ui_message = Some(err),
+                            }
                         }
                         self.sync_session_state();
                         Ok(())
@@ -780,6 +790,7 @@ mod tests {
     use crate::input::AppAction;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ispf_core::{ActiveArea, EditBuffer};
+    use ispf_command::PrimaryCommand;
     use ispf_screen::ScreenRow;
     use ratatui::style::Modifier;
     use std::path::PathBuf;
@@ -874,6 +885,34 @@ mod tests {
         assert_eq!(app.session().buffer().to_text(), "AB\nCD\n");
         assert_eq!(app.session().view().cursor_row, 1);
         assert_eq!(app.session().view().cursor_col, 0);
+    }
+
+    #[test]
+    fn text_entry_mode_wraps_input_and_enter_ends_the_mode() {
+        let mut app = App::new(EditBuffer::from_text("\n").unwrap());
+        app.session
+            .execute_primary(PrimaryCommand::Bounds(Some((1, 4))))
+            .unwrap();
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.prefix_buffers.insert(0, "TE1".into());
+        app.handle_action(AppAction::Execute).unwrap();
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('A'))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('B'))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('C'))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('D'))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('E'))).unwrap();
+
+        assert_eq!(app.session().buffer().to_text(), "ABCD\nE\n");
+        assert!(app.session().text_entry_mode().is_some());
+
+        app.handle_key(KeyEvent::from(KeyCode::Enter)).unwrap();
+
+        assert_eq!(app.session().text_entry_mode(), None);
+        assert_eq!(app.screen_model(80, 24).message, "Text entry completed");
     }
 
     #[test]

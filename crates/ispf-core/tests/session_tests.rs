@@ -279,6 +279,41 @@ fn text_flow_command_rewraps_a_paragraph_within_bounds() {
 }
 
 #[test]
+fn text_entry_command_reserves_requested_lines_and_activates_mode() {
+    let buffer = EditBuffer::from_text("\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session.execute_prefix(0, PrefixCommand::TextEntry(2)).unwrap();
+
+    assert_eq!(session.buffer().to_text(), "\n\n\n");
+    assert_eq!(session.text_entry_mode().unwrap().start_row, 0);
+    assert_eq!(session.text_entry_mode().unwrap().end_row, 2);
+    assert_eq!(session.view().cursor_row, 0);
+}
+
+#[test]
+fn text_entry_wraps_at_the_right_bound_and_enter_ends_the_mode() {
+    let buffer = EditBuffer::from_text("\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((1, 4))))
+        .unwrap();
+    session.execute_prefix(0, PrefixCommand::TextEntry(1)).unwrap();
+
+    for ch in ['A', 'B', 'C', 'D', 'E'] {
+        session.text_entry_insert_char(ch).unwrap();
+    }
+
+    assert_eq!(session.buffer().to_text(), "ABCD\nE\n");
+    assert_eq!(session.view().cursor_row, 1);
+    assert_eq!(session.view().cursor_col, 1);
+
+    session.end_text_entry();
+    assert_eq!(session.text_entry_mode(), None);
+}
+
+#[test]
 fn undo_restores_a_split_line() {
     let buffer = EditBuffer::from_text("ABCD\n").unwrap();
     let mut session = EditorSession::new(buffer);

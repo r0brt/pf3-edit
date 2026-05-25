@@ -41,6 +41,12 @@ pub enum Destination {
     Overlay(usize),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TextEntryMode {
+    pub start_row: usize,
+    pub end_row: usize,
+}
+
 pub struct EditorSession {
     buffer: EditBuffer,
     original_buffer: EditBuffer,
@@ -65,6 +71,7 @@ pub struct EditorSession {
     pending_lowercase_block: Option<usize>,
     pending_uppercase_block: Option<usize>,
     pending_destination: Option<Destination>,
+    text_entry: Option<TextEntryMode>,
     should_exit: bool,
     exit_disposition: ExitDisposition,
 }
@@ -101,6 +108,7 @@ impl EditorSession {
             pending_lowercase_block: None,
             pending_uppercase_block: None,
             pending_destination: None,
+            text_entry: None,
             should_exit: false,
             exit_disposition: ExitDisposition::KeepChanges,
         }
@@ -177,6 +185,7 @@ impl EditorSession {
                 self.pending_lowercase_block = None;
                 self.pending_uppercase_block = None;
                 self.pending_destination = None;
+                self.text_entry = None;
                 self.should_exit = true;
                 self.exit_disposition = ExitDisposition::DiscardChanges;
             }
@@ -403,6 +412,16 @@ impl EditorSession {
                 self.text_flow_paragraph(row, width)?;
                 self.message = Some(SessionMessage {
                     text: "Text flow completed".into(),
+                    is_error: false,
+                });
+            }
+            PrefixCommand::TextEntry(extra_lines) => {
+                self.begin_text_entry(row, extra_lines)?;
+                self.message = Some(SessionMessage {
+                    text: match extra_lines {
+                        0 => "Text entry active".into(),
+                        count => format!("Text entry active with {count} extra lines"),
+                    },
                     is_error: false,
                 });
             }
@@ -698,6 +717,10 @@ impl EditorSession {
 
     pub fn pending_destination(&self) -> Option<Destination> {
         self.pending_destination
+    }
+
+    pub fn text_entry_mode(&self) -> Option<TextEntryMode> {
+        self.text_entry
     }
 
     pub fn message(&self) -> Option<&SessionMessage> {
