@@ -37,6 +37,7 @@ Without a file argument, the editor starts with a tiny in-memory buffer.
 ## Useful Keys
 
 - `Tab`: cycle `Primary Command Field -> Line Command Field -> Data Area`
+- `Shift+Tab`: cycle backward `Data Area -> Line Command Field -> Primary Command Field`
 - `F3`: save and exit
 - `F5`: `RFIND`
 - `F6`: `RCHANGE`
@@ -72,6 +73,8 @@ Without a file argument, the editor starts with a tiny in-memory buffer.
 - `UNDO`
 
 Line commands can also be driven from the primary command field with `:`, for example `:D2`.
+
+Primary and line commands are parsed case-insensitively. Command arguments keep their original case.
 
 ## Line Commands
 

@@ -19,6 +19,7 @@ pub enum AppAction {
     ScrollRight,
     Swap,
     ToggleFocus,
+    ToggleFocusBackward,
     Backspace,
     Delete,
     LineFeed,
@@ -58,6 +59,7 @@ pub fn map_key(event: KeyEvent) -> AppAction {
         KeyCode::F(11) => AppAction::ScrollRight,
         KeyCode::F(12) => AppAction::Cancel,
         KeyCode::Esc => AppAction::End,
+        KeyCode::BackTab => AppAction::ToggleFocusBackward,
         KeyCode::Tab => AppAction::ToggleFocus,
         KeyCode::Backspace => AppAction::Backspace,
         KeyCode::Delete => AppAction::Delete,
@@ -129,6 +131,10 @@ mod tests {
         assert_eq!(
             map_key(KeyEvent::from(KeyCode::Tab)),
             AppAction::ToggleFocus
+        );
+        assert_eq!(
+            map_key(KeyEvent::from(KeyCode::BackTab)),
+            AppAction::ToggleFocusBackward
         );
     }
 

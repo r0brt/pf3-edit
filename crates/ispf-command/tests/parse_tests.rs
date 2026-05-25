@@ -3,8 +3,11 @@ use ispf_command::{parse_prefix, parse_primary, PrefixCommand, PrimaryCommand};
 #[test]
 fn parses_basic_primary_commands() {
     assert_eq!(parse_primary("SAVE").unwrap(), PrimaryCommand::Save);
+    assert_eq!(parse_primary("save").unwrap(), PrimaryCommand::Save);
     assert_eq!(parse_primary("UNNUM").unwrap(), PrimaryCommand::Number(false));
+    assert_eq!(parse_primary("unnum").unwrap(), PrimaryCommand::Number(false));
     assert_eq!(parse_primary("CAPS ON").unwrap(), PrimaryCommand::Caps(true));
+    assert_eq!(parse_primary("caps off").unwrap(), PrimaryCommand::Caps(false));
     assert_eq!(parse_primary("COLS").unwrap(), PrimaryCommand::Cols);
     assert_eq!(parse_primary("BOUNDS").unwrap(), PrimaryCommand::Bounds(None));
     assert_eq!(
@@ -26,10 +29,23 @@ fn parses_find_and_change_commands() {
         }
     );
     assert_eq!(
+        parse_primary("find Alpha Beta").unwrap(),
+        PrimaryCommand::Find {
+            pattern: "Alpha Beta".into()
+        }
+    );
+    assert_eq!(
         parse_primary("CHANGE OLD NEW").unwrap(),
         PrimaryCommand::Change {
             from: "OLD".into(),
             to: "NEW".into()
+        }
+    );
+    assert_eq!(
+        parse_primary("change Old New").unwrap(),
+        PrimaryCommand::Change {
+            from: "Old".into(),
+            to: "New".into()
         }
     );
     assert_eq!(
@@ -45,6 +61,7 @@ fn parses_find_and_change_commands() {
 #[test]
 fn parses_prefix_commands() {
     assert_eq!(parse_prefix("I").unwrap(), PrefixCommand::Insert(1));
+    assert_eq!(parse_prefix("i").unwrap(), PrefixCommand::Insert(1));
     assert_eq!(parse_prefix("I3").unwrap(), PrefixCommand::Insert(3));
     assert_eq!(parse_prefix("D").unwrap(), PrefixCommand::Delete(1));
     assert_eq!(parse_prefix("D4").unwrap(), PrefixCommand::Delete(4));
@@ -53,8 +70,10 @@ fn parses_prefix_commands() {
     assert_eq!(parse_prefix("R2").unwrap(), PrefixCommand::Repeat(2));
     assert_eq!(parse_prefix("RR").unwrap(), PrefixCommand::RepeatBlock);
     assert_eq!(parse_prefix("TS").unwrap(), PrefixCommand::TextSplit(0));
+    assert_eq!(parse_prefix("ts2").unwrap(), PrefixCommand::TextSplit(2));
     assert_eq!(parse_prefix("TS3").unwrap(), PrefixCommand::TextSplit(3));
     assert_eq!(parse_prefix("TF").unwrap(), PrefixCommand::TextFlow(None));
+    assert_eq!(parse_prefix("tf50").unwrap(), PrefixCommand::TextFlow(Some(50)));
     assert_eq!(parse_prefix("TF50").unwrap(), PrefixCommand::TextFlow(Some(50)));
     assert_eq!(parse_prefix("C").unwrap(), PrefixCommand::Copy(1));
     assert_eq!(parse_prefix("C3").unwrap(), PrefixCommand::Copy(3));

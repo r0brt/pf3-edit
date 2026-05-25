@@ -22,14 +22,17 @@ pub enum PrimaryCommand {
 
 pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
     let parts: Vec<&str> = input.split_whitespace().collect();
-    match parts.as_slice() {
+    let upper: Vec<String> = parts.iter().map(|part| part.to_ascii_uppercase()).collect();
+    let upper_parts: Vec<&str> = upper.iter().map(String::as_str).collect();
+
+    match upper_parts.as_slice() {
         ["SAVE"] => Ok(PrimaryCommand::Save),
         ["CANCEL"] => Ok(PrimaryCommand::Cancel),
         ["END"] => Ok(PrimaryCommand::End),
         ["RFIND"] => Ok(PrimaryCommand::RFind),
         ["RCHANGE"] => Ok(PrimaryCommand::RChange),
-        ["LOCATE", target] | ["L", target] => Ok(PrimaryCommand::Locate {
-            target: target
+        ["LOCATE", _] | ["L", _] => Ok(PrimaryCommand::Locate {
+            target: parts[1]
                 .parse()
                 .map_err(|_| "invalid LOCATE target".to_string())?,
         }),
@@ -41,41 +44,42 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
         ["CAPS", "ON"] => Ok(PrimaryCommand::Caps(true)),
         ["CAPS", "OFF"] => Ok(PrimaryCommand::Caps(false)),
         ["FIND", rest @ ..] if !rest.is_empty() => Ok(PrimaryCommand::Find {
-            pattern: rest.join(" "),
+            pattern: parts[1..].join(" "),
         }),
-        ["CHANGE", from, to] => Ok(PrimaryCommand::Change {
-            from: (*from).into(),
-            to: (*to).into(),
+        ["CHANGE", _, _] => Ok(PrimaryCommand::Change {
+            from: parts[1].into(),
+            to: parts[2].into(),
         }),
         ["BOUNDS"] => Ok(PrimaryCommand::Bounds(None)),
-        ["BOUNDS", left, right] => Ok(PrimaryCommand::Bounds(Some((
-            left.parse()
+        ["BOUNDS", _, _] => Ok(PrimaryCommand::Bounds(Some((
+            parts[1]
+                .parse()
                 .map_err(|_| "invalid BOUNDS left column".to_string())?,
-            if *right == "*" {
+            if upper_parts[2] == "*" {
                 144
             } else {
-                right
+                parts[2]
                     .parse()
                     .map_err(|_| "invalid BOUNDS right column".to_string())?
             },
         )))),
-        ["UP", count] => Ok(PrimaryCommand::Up(
-            count
+        ["UP", _] => Ok(PrimaryCommand::Up(
+            parts[1]
                 .parse()
                 .map_err(|_| "invalid UP count".to_string())?,
         )),
-        ["DOWN", count] => Ok(PrimaryCommand::Down(
-            count
+        ["DOWN", _] => Ok(PrimaryCommand::Down(
+            parts[1]
                 .parse()
                 .map_err(|_| "invalid DOWN count".to_string())?,
         )),
-        ["LEFT", count] => Ok(PrimaryCommand::Left(
-            count
+        ["LEFT", _] => Ok(PrimaryCommand::Left(
+            parts[1]
                 .parse()
                 .map_err(|_| "invalid LEFT count".to_string())?,
         )),
-        ["RIGHT", count] => Ok(PrimaryCommand::Right(
-            count
+        ["RIGHT", _] => Ok(PrimaryCommand::Right(
+            parts[1]
                 .parse()
                 .map_err(|_| "invalid RIGHT count".to_string())?,
         )),

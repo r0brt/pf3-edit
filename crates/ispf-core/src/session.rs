@@ -122,6 +122,14 @@ impl EditorSession {
         };
     }
 
+    pub fn toggle_active_area_backward(&mut self) {
+        self.view.active_area = match self.view.active_area {
+            ActiveArea::CommandLine => ActiveArea::DataArea,
+            ActiveArea::LineCommandArea => ActiveArea::CommandLine,
+            ActiveArea::DataArea => ActiveArea::LineCommandArea,
+        };
+    }
+
     pub fn activate_data_area(&mut self) {
         self.view.active_area = ActiveArea::DataArea;
     }

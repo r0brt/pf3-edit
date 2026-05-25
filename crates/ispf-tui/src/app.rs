@@ -128,6 +128,7 @@ impl App {
             AppAction::RepeatFind => self.execute_primary_command(PrimaryCommand::RFind)?,
             AppAction::RepeatChange => self.execute_primary_command(PrimaryCommand::RChange)?,
             AppAction::ToggleFocus => self.session.toggle_active_area(),
+            AppAction::ToggleFocusBackward => self.session.toggle_active_area_backward(),
             AppAction::Backspace => {
                 match self.session.view().active_area {
                     ActiveArea::CommandLine => {
@@ -1011,6 +1012,20 @@ mod tests {
         assert_eq!(app.session().view().active_area, ActiveArea::LineCommandArea);
 
         app.handle_action(AppAction::ToggleFocus).unwrap();
+        assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
+    }
+
+    #[test]
+    fn reverse_toggle_focus_cycles_data_then_line_command_then_command_line() {
+        let mut app = App::new(EditBuffer::from_text("A\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocusBackward).unwrap();
+        assert_eq!(app.session().view().active_area, ActiveArea::LineCommandArea);
+
+        app.handle_action(AppAction::ToggleFocusBackward).unwrap();
+        assert_eq!(app.session().view().active_area, ActiveArea::CommandLine);
+
+        app.handle_action(AppAction::ToggleFocusBackward).unwrap();
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
     }
 

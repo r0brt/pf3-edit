@@ -8,6 +8,8 @@ Current active follow-up block:
 
 Most recent implemented follow-up items:
 
+- backward focus cycling with `Shift+Tab`
+- case-insensitive primary and line command parsing
 - initial `TS` and `TF` text-workflow line commands
 - excluded-block placeholder rows plus local `S`
 - stronger PF-key parity for `F2=Split`

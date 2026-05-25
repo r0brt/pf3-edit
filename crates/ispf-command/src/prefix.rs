@@ -25,7 +25,8 @@ pub enum PrefixCommand {
 }
 
 pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
-    match input.trim() {
+    let normalized = input.trim().to_ascii_uppercase();
+    match normalized.as_str() {
         "DD" => Ok(PrefixCommand::DeleteBlock),
         "RR" => Ok(PrefixCommand::RepeatBlock),
         "CC" => Ok(PrefixCommand::CopyBlock),
@@ -71,7 +72,7 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
         other if matches_counted_line_command(other, 'M') => {
             Ok(PrefixCommand::Move(parse_line_command_count(other)))
         }
-        other => Err(format!("unknown line command: {other}")),
+        _ => Err(format!("unknown line command: {}", input.trim())),
     }
 }
 
