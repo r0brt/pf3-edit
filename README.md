@@ -17,6 +17,7 @@ Current implemented highlights:
 - undo, save/cancel/end, find/change, locate, scroll, bounds, numbering, caps
 - direct data-area editing with overwrite, split, join, delete, and line feed
 - line commands including `I`, `D`, `DD`, `R`, `RR`, `TS`, `TF`, `TE`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
+- stronger bounds-aware behavior, including split validation at active bounds and vertical cursor movement that preserves the intended column across shorter intermediate lines
 
 Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
 
@@ -41,6 +42,13 @@ Without a file argument, the editor starts with a tiny in-memory buffer.
 - `make lint`
 - `make fmt`
 - `make check`
+- `make debug-keys`
+
+The recommended local verification flow is:
+
+```bash
+make check
+```
 
 ## Useful Keys
 

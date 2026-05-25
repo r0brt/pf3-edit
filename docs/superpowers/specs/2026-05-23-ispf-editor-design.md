@@ -44,6 +44,8 @@ Implemented highlights:
 - forward and backward focus cycling with `Tab` and `Shift+Tab`
 - case-insensitive command parsing for both primary and line commands while preserving operand case
 - `TE` now hands focus directly back to the data area and blocks `Shift+Enter` while text entry is active
+- repo-level make targets for routine development and verification
+- stronger `BOUNDS` invariants: `TS` and direct line splits reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 
 Current focus for the next `v1.0`-oriented block:
 

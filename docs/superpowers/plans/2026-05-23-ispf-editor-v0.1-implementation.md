@@ -8,6 +8,8 @@ Current active follow-up block:
 
 Most recent implemented follow-up items:
 
+- repo-level `Makefile` with `run`, `test`, `lint`, `fmt`, `check`, and `debug-keys` targets
+- stronger bounds/text-workflow invariants: direct splits and `TS` reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 - minimal `TE` text-entry mode with bounds-aware wrapping
 - `TE` activation now drops straight into the data area, and `Shift+Enter` is blocked while text entry is active
 - backward focus cycling with `Shift+Tab`
