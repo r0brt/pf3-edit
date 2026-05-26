@@ -64,6 +64,34 @@ impl EditorSession {
         self.desired_cursor_col = self.view.cursor_col;
     }
 
+    pub fn scroll_view_up(&mut self, count: Option<usize>) {
+        match (self.profile.scroll_mode, count) {
+            (ScrollMode::Csr, None) => {
+                let anchor = self.navigable_row_start(self.view.cursor_row);
+                let window = self.scroll_rows_hint.max(1);
+                self.view.top_row = anchor.saturating_sub(window.saturating_sub(1));
+            }
+            _ => {
+                let step = count.unwrap_or_else(|| self.effective_vertical_scroll_rows());
+                self.view.top_row = self.view.top_row.saturating_sub(step);
+            }
+        }
+    }
+
+    pub fn scroll_view_down(&mut self, count: Option<usize>) {
+        match (self.profile.scroll_mode, count) {
+            (ScrollMode::Csr, None) => {
+                self.view.top_row = self.navigable_row_start(self.view.cursor_row);
+                self.clamp_top_row();
+            }
+            _ => {
+                let step = count.unwrap_or_else(|| self.effective_vertical_scroll_rows());
+                self.view.top_row = self.view.top_row.saturating_add(step);
+                self.clamp_top_row();
+            }
+        }
+    }
+
     pub fn row_is_excluded(&self, row: usize) -> bool {
         self.buffer
             .records()

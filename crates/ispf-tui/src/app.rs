@@ -1144,15 +1144,34 @@ mod tests {
 
     #[test]
     fn scroll_actions_shift_the_viewport() {
-        let mut app = App::new(EditBuffer::from_text("A\nB\nC\nD\n").unwrap());
+        let mut app = App::new(EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap());
+        app.scroll_rows_hint.set(4);
         app.session
-            .execute_primary(PrimaryCommand::Scroll(ispf_command::ScrollMode::Csr))
+            .execute_primary(PrimaryCommand::Scroll(ispf_command::ScrollMode::Half))
             .unwrap();
 
         app.handle_action(AppAction::ScrollDown).unwrap();
         app.handle_action(AppAction::ScrollDown).unwrap();
         app.handle_action(AppAction::ScrollUp).unwrap();
 
+        assert_eq!(app.session().view().top_row, 2);
+    }
+
+    #[test]
+    fn csr_scroll_actions_use_the_cursor_row_as_the_scroll_anchor() {
+        let mut app = App::new(EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap());
+        app.scroll_rows_hint.set(4);
+        app.session
+            .execute_primary(PrimaryCommand::Scroll(ispf_command::ScrollMode::Csr))
+            .unwrap();
+        app.session
+            .execute_primary(PrimaryCommand::Locate { target: 5 })
+            .unwrap();
+        app.session.execute_primary(PrimaryCommand::Up(Some(1))).unwrap();
+
+        app.handle_action(AppAction::ScrollUp).unwrap();
+
+        assert_eq!(app.session().view().cursor_row, 4);
         assert_eq!(app.session().view().top_row, 1);
     }
 

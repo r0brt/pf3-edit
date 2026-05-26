@@ -349,15 +349,8 @@ impl EditorSession {
             }
             PrimaryCommand::Cols => self.profile.cols_mode = !self.profile.cols_mode,
             PrimaryCommand::Scroll(mode) => self.profile.scroll_mode = mode,
-            PrimaryCommand::Down(count) => {
-                let step = count.unwrap_or_else(|| self.effective_vertical_scroll_rows());
-                self.view.top_row = self.view.top_row.saturating_add(step);
-                self.clamp_top_row();
-            }
-            PrimaryCommand::Up(count) => {
-                let step = count.unwrap_or_else(|| self.effective_vertical_scroll_rows());
-                self.view.top_row = self.view.top_row.saturating_sub(step);
-            }
+            PrimaryCommand::Down(count) => self.scroll_view_down(count),
+            PrimaryCommand::Up(count) => self.scroll_view_up(count),
             PrimaryCommand::Left(count) => {
                 self.view.left_col = self.view.left_col.saturating_sub(count);
             }

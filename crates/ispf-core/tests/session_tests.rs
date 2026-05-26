@@ -107,19 +107,52 @@ fn half_scroll_mode_uses_half_the_scroll_rows_hint() {
 }
 
 #[test]
-fn csr_scroll_mode_moves_by_a_single_row() {
-    let buffer = EditBuffer::from_text("A\nB\nC\nD\n").unwrap();
+fn csr_scroll_mode_uses_explicit_counts_when_provided() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap();
     let mut session = EditorSession::new(buffer);
     session.set_scroll_rows_hint(6);
     session
         .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
         .unwrap();
 
-    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
-    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
+    session.execute_primary(PrimaryCommand::Down(Some(2))).unwrap();
     assert_eq!(session.view().top_row, 2);
 
+    session.execute_primary(PrimaryCommand::Up(Some(1))).unwrap();
+    assert_eq!(session.view().top_row, 1);
+}
+
+#[test]
+fn csr_scroll_down_places_the_cursor_row_at_the_top_of_the_view() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session.set_scroll_rows_hint(4);
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
+        .unwrap();
+    session.execute_primary(PrimaryCommand::Locate { target: 4 }).unwrap();
+    session.execute_primary(PrimaryCommand::Up(Some(2))).unwrap();
+
+    session.execute_primary(PrimaryCommand::Down(None)).unwrap();
+
+    assert_eq!(session.view().cursor_row, 3);
+    assert_eq!(session.view().top_row, 3);
+}
+
+#[test]
+fn csr_scroll_up_places_the_cursor_row_at_the_bottom_of_the_view_when_possible() {
+    let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session.set_scroll_rows_hint(4);
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
+        .unwrap();
+    session.execute_primary(PrimaryCommand::Locate { target: 5 }).unwrap();
+    session.execute_primary(PrimaryCommand::Up(Some(1))).unwrap();
+
     session.execute_primary(PrimaryCommand::Up(None)).unwrap();
+
+    assert_eq!(session.view().cursor_row, 4);
     assert_eq!(session.view().top_row, 1);
 }
 
