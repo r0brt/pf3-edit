@@ -211,15 +211,19 @@ impl EditorSession {
             }
             PrimaryCommand::Find { pattern } => {
                 self.last_find = Some(pattern.clone());
-                if let Some((index, col)) = self
-                    .buffer
-                    .records()
-                    .iter()
-                    .enumerate()
-                    .find_map(|(index, record)| {
-                        find_first_in_bounds(record.text.as_str(), &pattern, self.profile.bounds)
+                if let Some((index, col)) =
+                    self.buffer
+                        .records()
+                        .iter()
+                        .enumerate()
+                        .find_map(|(index, record)| {
+                            find_first_in_bounds(
+                                record.text.as_str(),
+                                &pattern,
+                                self.profile.bounds,
+                            )
                             .map(|col| (index, col))
-                    })
+                        })
                 {
                     self.view.cursor_row = index;
                     self.view.top_row = index;
@@ -291,19 +295,20 @@ impl EditorSession {
             }
             PrimaryCommand::Change { from, to } => {
                 self.last_change = Some((from.clone(), to.clone()));
-                if let Some((index, col)) = self
-                    .buffer
-                    .records()
-                    .iter()
-                    .enumerate()
-                    .find_map(|(index, record)| {
-                        find_first_in_bounds(record.text.as_str(), &from, self.profile.bounds)
-                            .map(|col| (index, col))
-                    })
+                if let Some((index, col)) =
+                    self.buffer
+                        .records()
+                        .iter()
+                        .enumerate()
+                        .find_map(|(index, record)| {
+                            find_first_in_bounds(record.text.as_str(), &from, self.profile.bounds)
+                                .map(|col| (index, col))
+                        })
                 {
                     let previous = self.buffer.records()[index].text.clone();
-                    let updated = replace_first_in_bounds(&previous, &from, &to, self.profile.bounds)
-                        .ok_or_else(|| "Pattern not found".to_string())?;
+                    let updated =
+                        replace_first_in_bounds(&previous, &from, &to, self.profile.bounds)
+                            .ok_or_else(|| "Pattern not found".to_string())?;
                     self.buffer
                         .replace_line(index, &updated)
                         .ok_or_else(|| "invalid row".to_string())?;
@@ -434,7 +439,9 @@ impl EditorSession {
                 for offset in 0..count {
                     self.buffer.insert_after(row + offset, &text);
                     self.undo.push(UndoEntry::InsertedLine {
-                        index: row.saturating_add(1 + offset).min(self.buffer.records().len() - 1),
+                        index: row
+                            .saturating_add(1 + offset)
+                            .min(self.buffer.records().len() - 1),
                     });
                 }
             }
@@ -700,7 +707,10 @@ impl EditorSession {
                             excluded += 1;
                         }
                     }
-                    self.move_cursor_to_nearest_visible(upper.saturating_add(1), lower.saturating_sub(1));
+                    self.move_cursor_to_nearest_visible(
+                        upper.saturating_add(1),
+                        lower.saturating_sub(1),
+                    );
                     self.message = Some(SessionMessage {
                         text: format!("{excluded} lines excluded"),
                         is_error: false,

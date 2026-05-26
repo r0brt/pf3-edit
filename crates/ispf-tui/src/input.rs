@@ -70,7 +70,7 @@ pub fn map_key(event: KeyEvent) -> AppAction {
 
 #[cfg(test)]
 mod tests {
-    use super::{map_key, AppAction};
+    use super::{AppAction, map_key};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     #[test]
@@ -79,8 +79,14 @@ mod tests {
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(2))), AppAction::Split);
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(3))), AppAction::ExitSave);
         assert_eq!(map_key(KeyEvent::from(KeyCode::Up)), AppAction::CursorUp);
-        assert_eq!(map_key(KeyEvent::from(KeyCode::Down)), AppAction::CursorDown);
-        assert_eq!(map_key(KeyEvent::from(KeyCode::Left)), AppAction::CursorLeft);
+        assert_eq!(
+            map_key(KeyEvent::from(KeyCode::Down)),
+            AppAction::CursorDown
+        );
+        assert_eq!(
+            map_key(KeyEvent::from(KeyCode::Left)),
+            AppAction::CursorLeft
+        );
         assert_eq!(
             map_key(KeyEvent::from(KeyCode::Right)),
             AppAction::CursorRight
@@ -93,13 +99,19 @@ mod tests {
             map_key(KeyEvent::from(KeyCode::End)),
             AppAction::CursorLineEnd
         );
-        assert_eq!(map_key(KeyEvent::from(KeyCode::F(5))), AppAction::RepeatFind);
+        assert_eq!(
+            map_key(KeyEvent::from(KeyCode::F(5))),
+            AppAction::RepeatFind
+        );
         assert_eq!(
             map_key(KeyEvent::from(KeyCode::F(6))),
             AppAction::RepeatChange
         );
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(7))), AppAction::ScrollUp);
-        assert_eq!(map_key(KeyEvent::from(KeyCode::F(8))), AppAction::ScrollDown);
+        assert_eq!(
+            map_key(KeyEvent::from(KeyCode::F(8))),
+            AppAction::ScrollDown
+        );
         assert_eq!(map_key(KeyEvent::from(KeyCode::F(9))), AppAction::Swap);
         assert_eq!(
             map_key(KeyEvent::from(KeyCode::F(10))),

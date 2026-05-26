@@ -178,11 +178,7 @@ impl EditBuffer {
 }
 
 fn detect_newline(input: &str) -> &'static str {
-    if input.contains("\r\n") {
-        "\r\n"
-    } else {
-        "\n"
-    }
+    if input.contains("\r\n") { "\r\n" } else { "\n" }
 }
 
 fn validate_single_newline_style(input: &str) -> std::io::Result<()> {

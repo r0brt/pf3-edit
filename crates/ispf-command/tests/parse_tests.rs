@@ -1,13 +1,25 @@
-use ispf_command::{parse_prefix, parse_primary, PrefixCommand, PrimaryCommand, ScrollMode};
+use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode, parse_prefix, parse_primary};
 
 #[test]
 fn parses_basic_primary_commands() {
     assert_eq!(parse_primary("SAVE").unwrap(), PrimaryCommand::Save);
     assert_eq!(parse_primary("save").unwrap(), PrimaryCommand::Save);
-    assert_eq!(parse_primary("UNNUM").unwrap(), PrimaryCommand::Number(false));
-    assert_eq!(parse_primary("unnum").unwrap(), PrimaryCommand::Number(false));
-    assert_eq!(parse_primary("CAPS ON").unwrap(), PrimaryCommand::Caps(true));
-    assert_eq!(parse_primary("caps off").unwrap(), PrimaryCommand::Caps(false));
+    assert_eq!(
+        parse_primary("UNNUM").unwrap(),
+        PrimaryCommand::Number(false)
+    );
+    assert_eq!(
+        parse_primary("unnum").unwrap(),
+        PrimaryCommand::Number(false)
+    );
+    assert_eq!(
+        parse_primary("CAPS ON").unwrap(),
+        PrimaryCommand::Caps(true)
+    );
+    assert_eq!(
+        parse_primary("caps off").unwrap(),
+        PrimaryCommand::Caps(false)
+    );
     assert_eq!(parse_primary("COLS").unwrap(), PrimaryCommand::Cols);
     assert_eq!(
         parse_primary("SCROLL PAGE").unwrap(),
@@ -21,7 +33,10 @@ fn parses_basic_primary_commands() {
         parse_primary("SCROLL CSR").unwrap(),
         PrimaryCommand::Scroll(ScrollMode::Csr)
     );
-    assert_eq!(parse_primary("BOUNDS").unwrap(), PrimaryCommand::Bounds(None));
+    assert_eq!(
+        parse_primary("BOUNDS").unwrap(),
+        PrimaryCommand::Bounds(None)
+    );
     assert_eq!(
         parse_primary("BOUNDS 7 70").unwrap(),
         PrimaryCommand::Bounds(Some((7, 70)))
@@ -106,8 +121,14 @@ fn parses_prefix_commands() {
     assert_eq!(parse_prefix("ts2").unwrap(), PrefixCommand::TextSplit(2));
     assert_eq!(parse_prefix("TS3").unwrap(), PrefixCommand::TextSplit(3));
     assert_eq!(parse_prefix("TF").unwrap(), PrefixCommand::TextFlow(None));
-    assert_eq!(parse_prefix("tf50").unwrap(), PrefixCommand::TextFlow(Some(50)));
-    assert_eq!(parse_prefix("TF50").unwrap(), PrefixCommand::TextFlow(Some(50)));
+    assert_eq!(
+        parse_prefix("tf50").unwrap(),
+        PrefixCommand::TextFlow(Some(50))
+    );
+    assert_eq!(
+        parse_prefix("TF50").unwrap(),
+        PrefixCommand::TextFlow(Some(50))
+    );
     assert_eq!(parse_prefix("TE").unwrap(), PrefixCommand::TextEntry(0));
     assert_eq!(parse_prefix("te3").unwrap(), PrefixCommand::TextEntry(3));
     assert_eq!(parse_prefix("C").unwrap(), PrefixCommand::Copy(1));
@@ -128,8 +149,5 @@ fn parses_prefix_commands() {
     assert_eq!(parse_prefix("A").unwrap(), PrefixCommand::After);
     assert_eq!(parse_prefix("B").unwrap(), PrefixCommand::Before);
     assert_eq!(parse_prefix("XX").unwrap(), PrefixCommand::ExcludeBlock);
-    assert_eq!(
-        parse_prefix("ZZ").unwrap_err(),
-        "unknown line command: ZZ"
-    );
+    assert_eq!(parse_prefix("ZZ").unwrap_err(), "unknown line command: ZZ");
 }

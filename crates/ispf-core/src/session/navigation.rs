@@ -133,7 +133,9 @@ impl EditorSession {
 
     fn previous_navigable_row(&self, row: usize) -> Option<usize> {
         let current = self.navigable_row_start(row);
-        (0..current).rev().find(|&index| self.is_navigable_row(index))
+        (0..current)
+            .rev()
+            .find(|&index| self.is_navigable_row(index))
     }
 
     fn is_navigable_row(&self, row: usize) -> bool {

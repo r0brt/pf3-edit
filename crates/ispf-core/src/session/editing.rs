@@ -4,8 +4,9 @@ use crate::Record;
 impl EditorSession {
     pub fn insert_blank_line_after(&mut self, row: usize) {
         self.buffer.insert_after(row, "");
-        let inserted_index =
-            row.saturating_add(1).min(self.buffer.records().len().saturating_sub(1));
+        let inserted_index = row
+            .saturating_add(1)
+            .min(self.buffer.records().len().saturating_sub(1));
         self.view.cursor_row = inserted_index;
         self.desired_cursor_col = self.view.cursor_col;
         self.undo.push(UndoEntry::InsertedLine {
@@ -695,7 +696,11 @@ fn convert_case_in_bounds(text: &str, bounds: Option<(usize, usize)>, uppercase:
         .collect()
 }
 
-fn flow_paragraph_lines(records: &[Record], bounds: Option<(usize, usize)>, width: usize) -> Vec<String> {
+fn flow_paragraph_lines(
+    records: &[Record],
+    bounds: Option<(usize, usize)>,
+    width: usize,
+) -> Vec<String> {
     let left_padding = bounds.map(|(left, _)| left.saturating_sub(1)).unwrap_or(0);
     let words: Vec<String> = records
         .iter()

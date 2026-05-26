@@ -6,10 +6,7 @@ static NEXT_TEMP_ID: AtomicUsize = AtomicUsize::new(1);
 
 fn unique_temp_path(name: &str) -> PathBuf {
     let id = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
-    std::env::temp_dir().join(format!(
-        "ispf-{name}-{}-{id}.txt",
-        std::process::id()
-    ))
+    std::env::temp_dir().join(format!("ispf-{name}-{}-{id}.txt", std::process::id()))
 }
 
 #[test]

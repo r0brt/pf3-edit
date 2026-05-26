@@ -1,13 +1,13 @@
 mod app;
 mod input;
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::path::PathBuf;
 
 const HELP_TEXT: &str = concat!(
-"pf3-edit ",
-env!("CARGO_PKG_VERSION"),
-"
+    "pf3-edit ",
+    env!("CARGO_PKG_VERSION"),
+    "
 
 USAGE:
   pf3-edit [OPTIONS] [FILE]

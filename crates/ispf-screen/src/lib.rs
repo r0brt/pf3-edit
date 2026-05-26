@@ -1,3 +1,3 @@
 mod render;
 
-pub use render::{render_screen, ScreenModel, ScreenRow};
+pub use render::{ScreenModel, ScreenRow, render_screen};

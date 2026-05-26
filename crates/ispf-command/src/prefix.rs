@@ -41,24 +41,30 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
         "O" => Ok(PrefixCommand::Overlay),
         "S" => Ok(PrefixCommand::Show),
         "X" => Ok(PrefixCommand::Exclude),
-        other if matches_multi_letter_counted_line_command(other, "TS") => Ok(PrefixCommand::TextSplit(
-            other
-                .strip_prefix("TS")
-                .filter(|suffix| !suffix.is_empty())
-                .and_then(|suffix| suffix.parse().ok())
-                .unwrap_or(0),
-        )),
+        other if matches_multi_letter_counted_line_command(other, "TS") => {
+            Ok(PrefixCommand::TextSplit(
+                other
+                    .strip_prefix("TS")
+                    .filter(|suffix| !suffix.is_empty())
+                    .and_then(|suffix| suffix.parse().ok())
+                    .unwrap_or(0),
+            ))
+        }
         other if matches_multi_letter_counted_line_command(other, "TF") => {
             let width = parse_multi_letter_count(other, 2);
-            Ok(PrefixCommand::TextFlow((width != 1 || other.len() > 2).then_some(width)))
+            Ok(PrefixCommand::TextFlow(
+                (width != 1 || other.len() > 2).then_some(width),
+            ))
         }
-        other if matches_multi_letter_counted_line_command(other, "TE") => Ok(PrefixCommand::TextEntry(
-            other
-                .strip_prefix("TE")
-                .filter(|suffix| !suffix.is_empty())
-                .and_then(|suffix| suffix.parse().ok())
-                .unwrap_or(0),
-        )),
+        other if matches_multi_letter_counted_line_command(other, "TE") => {
+            Ok(PrefixCommand::TextEntry(
+                other
+                    .strip_prefix("TE")
+                    .filter(|suffix| !suffix.is_empty())
+                    .and_then(|suffix| suffix.parse().ok())
+                    .unwrap_or(0),
+            ))
+        }
         other if matches_multi_letter_counted_line_command(other, "LC") => {
             Ok(PrefixCommand::Lowercase(parse_multi_letter_count(other, 2)))
         }
@@ -86,8 +92,7 @@ pub fn parse_prefix(input: &str) -> Result<PrefixCommand, String> {
 
 fn matches_counted_line_command(input: &str, command: char) -> bool {
     let mut chars = input.chars();
-    matches!(chars.next(), Some(first) if first == command)
-        && chars.all(|ch| ch.is_ascii_digit())
+    matches!(chars.next(), Some(first) if first == command) && chars.all(|ch| ch.is_ascii_digit())
 }
 
 fn parse_line_command_count(input: &str) -> usize {
@@ -100,9 +105,9 @@ fn parse_line_command_count(input: &str) -> usize {
 }
 
 fn matches_multi_letter_counted_line_command(input: &str, command: &str) -> bool {
-    input
-        .strip_prefix(command)
-        .is_some_and(|suffix| !suffix.starts_with(command) && suffix.chars().all(|ch| ch.is_ascii_digit()))
+    input.strip_prefix(command).is_some_and(|suffix| {
+        !suffix.starts_with(command) && suffix.chars().all(|ch| ch.is_ascii_digit())
+    })
 }
 
 fn parse_multi_letter_count(input: &str, prefix_len: usize) -> usize {

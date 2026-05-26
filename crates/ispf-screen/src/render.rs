@@ -1,5 +1,5 @@
-use ispf_core::{ActiveArea, EditorSession};
 use ispf_command::ScrollMode;
+use ispf_core::{ActiveArea, EditorSession};
 
 const DEFAULT_DATA_COLUMNS: usize = 144;
 
@@ -66,15 +66,14 @@ pub fn render_screen(session: &EditorSession, _width: u16, height: u16) -> Scree
                 is_excluded_placeholder: entry.is_excluded_placeholder,
                 prefix_selected,
                 text_selected,
-                text_cursor_col: text_selected
-                    .then_some(if entry.is_excluded_placeholder {
-                        0
-                    } else {
-                        session
-                            .view()
-                            .cursor_col
-                            .saturating_sub(session.view().left_col)
-                    }),
+                text_cursor_col: text_selected.then_some(if entry.is_excluded_placeholder {
+                    0
+                } else {
+                    session
+                        .view()
+                        .cursor_col
+                        .saturating_sub(session.view().left_col)
+                }),
             }
         })
         .collect();
@@ -150,11 +149,7 @@ fn collect_visible_entries(session: &EditorSession) -> Vec<VisibleEntry> {
             entries.push(VisibleEntry {
                 start_index: index,
                 end_index: index,
-                text: record
-                    .text
-                    .chars()
-                    .skip(session.view().left_col)
-                    .collect(),
+                text: record.text.chars().skip(session.view().left_col).collect(),
                 is_excluded_placeholder: false,
             });
             index += 1;

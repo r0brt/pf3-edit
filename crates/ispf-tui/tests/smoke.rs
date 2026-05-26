@@ -13,9 +13,7 @@ fn sample_fixture_exists_for_manual_smoke_runs() {
 
 #[test]
 fn binary_starts_without_panicking() {
-    let output = std::process::Command::new(binary_path())
-        .output()
-        .unwrap();
+    let output = std::process::Command::new(binary_path()).output().unwrap();
 
     assert!(
         output.status.success(),

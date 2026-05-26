@@ -2,22 +2,22 @@ use anyhow::Result;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ispf_command::{parse_prefix, parse_primary, PrimaryCommand};
+use ispf_command::{PrimaryCommand, parse_prefix, parse_primary};
 use ispf_core::{ActiveArea, EditBuffer, EditorSession};
-use ispf_screen::{render_screen, ScreenModel};
+use ispf_screen::{ScreenModel, render_screen};
 use ratatui::{
+    Terminal,
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
-    Terminal,
 };
 use std::cell::Cell;
 use std::collections::BTreeMap;
-use std::io::{stdout, IsTerminal};
+use std::io::{IsTerminal, stdout};
 use std::path::Path;
 
 use crate::input::AppAction;
@@ -111,13 +111,15 @@ impl App {
                 }
             }
             AppAction::ScrollUp => {
-                self.session.set_scroll_rows_hint(self.scroll_rows_hint.get());
+                self.session
+                    .set_scroll_rows_hint(self.scroll_rows_hint.get());
                 self.session
                     .execute_primary(PrimaryCommand::Up(None))
                     .map_err(anyhow::Error::msg)?;
             }
             AppAction::ScrollDown => {
-                self.session.set_scroll_rows_hint(self.scroll_rows_hint.get());
+                self.session
+                    .set_scroll_rows_hint(self.scroll_rows_hint.get());
                 self.session
                     .execute_primary(PrimaryCommand::Down(None))
                     .map_err(anyhow::Error::msg)?;
@@ -137,23 +139,21 @@ impl App {
             AppAction::RepeatChange => self.execute_primary_command(PrimaryCommand::RChange)?,
             AppAction::ToggleFocus => self.session.toggle_active_area(),
             AppAction::ToggleFocusBackward => self.session.toggle_active_area_backward(),
-            AppAction::Backspace => {
-                match self.session.view().active_area {
-                    ActiveArea::CommandLine => {
-                        self.command_buffer.pop();
-                    }
-                    ActiveArea::LineCommandArea => {
-                        let row = self.session.view().cursor_row;
-                        if let Some(buffer) = self.prefix_buffers.get_mut(&row) {
-                            buffer.pop();
-                            if buffer.is_empty() {
-                                self.prefix_buffers.remove(&row);
-                            }
+            AppAction::Backspace => match self.session.view().active_area {
+                ActiveArea::CommandLine => {
+                    self.command_buffer.pop();
+                }
+                ActiveArea::LineCommandArea => {
+                    let row = self.session.view().cursor_row;
+                    if let Some(buffer) = self.prefix_buffers.get_mut(&row) {
+                        buffer.pop();
+                        if buffer.is_empty() {
+                            self.prefix_buffers.remove(&row);
                         }
                     }
-                    ActiveArea::DataArea => {}
                 }
-            }
+                ActiveArea::DataArea => {}
+            },
             AppAction::Delete => {
                 if self.session.view().active_area == ActiveArea::DataArea {
                     match self.session.delete_char() {
@@ -180,13 +180,11 @@ impl App {
             }
             AppAction::Cancel => self.execute_primary_command(PrimaryCommand::Cancel)?,
             AppAction::End => self.execute_primary_command(PrimaryCommand::End)?,
-            AppAction::Execute => {
-                match self.session.view().active_area {
-                    ActiveArea::CommandLine => self.execute_command_line()?,
-                    ActiveArea::LineCommandArea => self.execute_prefix_line()?,
-                    ActiveArea::DataArea => {}
-                }
-            }
+            AppAction::Execute => match self.session.view().active_area {
+                ActiveArea::CommandLine => self.execute_command_line()?,
+                ActiveArea::LineCommandArea => self.execute_prefix_line()?,
+                ActiveArea::DataArea => {}
+            },
             AppAction::None => {}
         }
         self.sync_session_state();
@@ -241,45 +239,43 @@ impl App {
                 }
                 _ => self.handle_action(crate::input::map_key(key)),
             },
-            ActiveArea::DataArea => {
-                match key.code {
-                    KeyCode::Char(ch) => {
-                        let result = if self.session.text_entry_mode().is_some() {
-                            self.session.text_entry_insert_char(ch)
-                        } else {
-                            self.session.insert_char(ch)
-                        };
-                        match result {
-                            Ok(()) => self.ui_message = None,
-                            Err(err) => self.ui_message = Some(err),
-                        }
-                        self.sync_session_state();
-                        Ok(())
+            ActiveArea::DataArea => match key.code {
+                KeyCode::Char(ch) => {
+                    let result = if self.session.text_entry_mode().is_some() {
+                        self.session.text_entry_insert_char(ch)
+                    } else {
+                        self.session.insert_char(ch)
+                    };
+                    match result {
+                        Ok(()) => self.ui_message = None,
+                        Err(err) => self.ui_message = Some(err),
                     }
-                    KeyCode::Backspace => {
-                        match self.session.backspace_char() {
-                            Ok(()) => self.ui_message = None,
-                            Err(err) => self.ui_message = Some(err),
-                        }
-                        self.sync_session_state();
-                        Ok(())
-                    }
-                    KeyCode::Enter => {
-                        if self.session.text_entry_mode().is_some() {
-                            self.session.end_text_entry();
-                            self.ui_message = Some("Text entry completed".into());
-                        } else {
-                            match self.session.split_line_at_cursor() {
-                                Ok(()) => self.ui_message = None,
-                                Err(err) => self.ui_message = Some(err),
-                            }
-                        }
-                        self.sync_session_state();
-                        Ok(())
-                    }
-                    _ => self.handle_action(crate::input::map_key(key)),
+                    self.sync_session_state();
+                    Ok(())
                 }
-            }
+                KeyCode::Backspace => {
+                    match self.session.backspace_char() {
+                        Ok(()) => self.ui_message = None,
+                        Err(err) => self.ui_message = Some(err),
+                    }
+                    self.sync_session_state();
+                    Ok(())
+                }
+                KeyCode::Enter => {
+                    if self.session.text_entry_mode().is_some() {
+                        self.session.end_text_entry();
+                        self.ui_message = Some("Text entry completed".into());
+                    } else {
+                        match self.session.split_line_at_cursor() {
+                            Ok(()) => self.ui_message = None,
+                            Err(err) => self.ui_message = Some(err),
+                        }
+                    }
+                    self.sync_session_state();
+                    Ok(())
+                }
+                _ => self.handle_action(crate::input::map_key(key)),
+            },
         }
     }
 
@@ -523,11 +519,7 @@ fn active_field_style() -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
-fn data_spans(
-    text: &str,
-    selected: bool,
-    cursor_col: Option<usize>,
-) -> Vec<Span<'static>> {
+fn data_spans(text: &str, selected: bool, cursor_col: Option<usize>) -> Vec<Span<'static>> {
     if !selected {
         return vec![Span::styled(text.to_string(), data_text_style())];
     }
@@ -597,7 +589,11 @@ fn data_row_line(row: &ispf_screen::ScreenRow) -> Line<'static> {
             },
         ));
     } else {
-        spans.extend(data_spans(&row.text, row.text_selected, row.text_cursor_col));
+        spans.extend(data_spans(
+            &row.text,
+            row.text_selected,
+            row.text_cursor_col,
+        ));
     }
 
     Line::from(spans)
@@ -763,16 +759,10 @@ fn run_loop(
             let rows = screen.rows.into_iter().map(|row| data_row_line(&row));
             let mut body_lines = Vec::new();
             if let Some(banner) = screen.data_banner.clone() {
-                body_lines.push(Line::from(vec![Span::styled(
-                    banner,
-                    menu_style(),
-                )]));
+                body_lines.push(Line::from(vec![Span::styled(banner, menu_style())]));
             }
             if let Some(cols_line) = screen.cols_line.clone() {
-                body_lines.push(Line::from(vec![Span::styled(
-                    cols_line,
-                    header_style(),
-                )]));
+                body_lines.push(Line::from(vec![Span::styled(cols_line, header_style())]));
             }
             if let Some(bounds_line) = screen.bounds_line.clone() {
                 body_lines.push(Line::from(vec![Span::styled(
@@ -782,16 +772,15 @@ fn run_loop(
             }
             body_lines.extend(rows);
             if let Some(banner) = screen.bottom_banner.clone() {
-                body_lines.push(Line::from(vec![Span::styled(
-                    banner,
-                    menu_style(),
-                )]));
+                body_lines.push(Line::from(vec![Span::styled(banner, menu_style())]));
             }
 
             frame.render_widget(
-                Paragraph::new(body_lines)
-                    .style(data_text_style())
-                    .block(Block::default().borders(Borders::ALL).style(metadata_style())),
+                Paragraph::new(body_lines).style(data_text_style()).block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .style(metadata_style()),
+                ),
                 sections[3],
             );
 
@@ -831,8 +820,8 @@ mod tests {
     use super::App;
     use crate::input::AppAction;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-    use ispf_core::{ActiveArea, EditBuffer};
     use ispf_command::PrimaryCommand;
+    use ispf_core::{ActiveArea, EditBuffer};
     use ispf_screen::ScreenRow;
     use ratatui::style::Modifier;
     use std::path::PathBuf;
@@ -842,10 +831,7 @@ mod tests {
 
     fn unique_temp_path(name: &str) -> PathBuf {
         let id = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
-        std::env::temp_dir().join(format!(
-            "ispf-tui-{name}-{}-{id}.txt",
-            std::process::id()
-        ))
+        std::env::temp_dir().join(format!("ispf-tui-{name}-{}-{id}.txt", std::process::id()))
     }
 
     #[test]
@@ -1039,7 +1025,10 @@ mod tests {
         app.handle_action(AppAction::ToggleFocus).unwrap();
         app.handle_key(KeyEvent::from(KeyCode::F(2))).unwrap();
 
-        assert_eq!(app.screen_model(80, 24).message, "F2 Split works in the data area");
+        assert_eq!(
+            app.screen_model(80, 24).message,
+            "F2 Split works in the data area"
+        );
     }
 
     #[test]
@@ -1048,7 +1037,10 @@ mod tests {
 
         app.handle_key(KeyEvent::from(KeyCode::F(9))).unwrap();
 
-        assert_eq!(app.screen_model(80, 24).message, "F9 Swap is not implemented yet");
+        assert_eq!(
+            app.screen_model(80, 24).message,
+            "F9 Swap is not implemented yet"
+        );
     }
 
     #[test]
@@ -1090,7 +1082,10 @@ mod tests {
 
         app.handle_key(KeyEvent::from(KeyCode::Left)).unwrap();
 
-        assert_eq!(app.session().view().active_area, ActiveArea::LineCommandArea);
+        assert_eq!(
+            app.session().view().active_area,
+            ActiveArea::LineCommandArea
+        );
         assert_eq!(app.session().view().cursor_col, 0);
     }
 
@@ -1122,7 +1117,10 @@ mod tests {
         assert_eq!(app.session().view().active_area, ActiveArea::CommandLine);
 
         app.handle_action(AppAction::ToggleFocus).unwrap();
-        assert_eq!(app.session().view().active_area, ActiveArea::LineCommandArea);
+        assert_eq!(
+            app.session().view().active_area,
+            ActiveArea::LineCommandArea
+        );
 
         app.handle_action(AppAction::ToggleFocus).unwrap();
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
@@ -1133,7 +1131,10 @@ mod tests {
         let mut app = App::new(EditBuffer::from_text("A\n").unwrap());
 
         app.handle_action(AppAction::ToggleFocusBackward).unwrap();
-        assert_eq!(app.session().view().active_area, ActiveArea::LineCommandArea);
+        assert_eq!(
+            app.session().view().active_area,
+            ActiveArea::LineCommandArea
+        );
 
         app.handle_action(AppAction::ToggleFocusBackward).unwrap();
         assert_eq!(app.session().view().active_area, ActiveArea::CommandLine);
@@ -1167,7 +1168,9 @@ mod tests {
         app.session
             .execute_primary(PrimaryCommand::Locate { target: 5 })
             .unwrap();
-        app.session.execute_primary(PrimaryCommand::Up(Some(1))).unwrap();
+        app.session
+            .execute_primary(PrimaryCommand::Up(Some(1)))
+            .unwrap();
 
         app.handle_action(AppAction::ScrollUp).unwrap();
 
@@ -1217,7 +1220,10 @@ mod tests {
         app.handle_action(AppAction::End).unwrap();
 
         assert!(!app.should_quit());
-        assert_eq!(app.screen_model(80, 24).message, "Use SAVE or CANCEL before END");
+        assert_eq!(
+            app.screen_model(80, 24).message,
+            "Use SAVE or CANCEL before END"
+        );
     }
 
     #[test]
@@ -1245,7 +1251,10 @@ mod tests {
         app.handle_action(AppAction::Execute).unwrap();
 
         assert!(!app.should_quit());
-        assert_eq!(app.screen_model(80, 24).message, "Use SAVE or CANCEL before END");
+        assert_eq!(
+            app.screen_model(80, 24).message,
+            "Use SAVE or CANCEL before END"
+        );
     }
 
     #[test]
@@ -1770,7 +1779,10 @@ mod tests {
         app.handle_key(KeyEvent::from(KeyCode::Esc)).unwrap();
 
         assert!(!app.should_quit());
-        assert_eq!(app.screen_model(80, 24).message, "Use SAVE or CANCEL before END");
+        assert_eq!(
+            app.screen_model(80, 24).message,
+            "Use SAVE or CANCEL before END"
+        );
     }
 
     #[test]
@@ -1813,7 +1825,10 @@ mod tests {
         app.handle_action(AppAction::ToggleFocus).unwrap();
 
         let screen = app.screen_model(80, 24);
-        assert_eq!(app.session().view().active_area, ActiveArea::LineCommandArea);
+        assert_eq!(
+            app.session().view().active_area,
+            ActiveArea::LineCommandArea
+        );
         assert!(screen.rows[0].prefix_selected);
     }
 
@@ -1894,7 +1909,11 @@ mod tests {
         };
 
         let line = super::data_row_line(&row);
-        let text: String = line.spans.iter().map(|span| span.content.as_ref()).collect();
+        let text: String = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect();
 
         assert_eq!(text, "000001 TEXT");
     }
@@ -1913,7 +1932,11 @@ mod tests {
         };
 
         let line = super::data_row_line(&row);
-        let text: String = line.spans.iter().map(|span| span.content.as_ref()).collect();
+        let text: String = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect();
 
         assert_eq!(text, "D00001 TEXT");
     }
@@ -1932,7 +1955,11 @@ mod tests {
         };
 
         let line = super::data_row_line(&row);
-        let text: String = line.spans.iter().map(|span| span.content.as_ref()).collect();
+        let text: String = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect();
 
         assert_eq!(text, "000001 TEXT");
     }
@@ -2113,10 +2140,7 @@ mod tests {
     fn ctrl_j_in_data_area_moves_to_the_next_line_without_inserting() {
         let mut app = App::new(EditBuffer::from_text("A\nB\nC\n").unwrap());
 
-        app.handle_key(KeyEvent::new(
-            KeyCode::Char('j'),
-            KeyModifiers::CONTROL,
-        ))
+        app.handle_key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::CONTROL))
             .unwrap();
 
         assert_eq!(app.session().buffer().to_text(), "A\nB\nC\n");

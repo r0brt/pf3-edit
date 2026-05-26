@@ -1,7 +1,7 @@
+use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
 use ispf_core::{
     ActiveArea, CapsMode, EditBuffer, EditProfile, EditorSession, UndoEntry, UndoStack,
 };
-use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
 
 #[test]
 fn new_session_starts_in_data_area() {
@@ -60,7 +60,9 @@ fn execute_primary_scrolls_and_toggles_profile() {
     let buffer = EditBuffer::from_text("A\nB\nC\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_primary(PrimaryCommand::Down(Some(2))).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Down(Some(2)))
+        .unwrap();
     assert_eq!(session.view().top_row, 2);
 
     session
@@ -68,7 +70,9 @@ fn execute_primary_scrolls_and_toggles_profile() {
         .unwrap();
     assert_eq!(session.profile().scroll_mode, ScrollMode::Half);
 
-    session.execute_primary(PrimaryCommand::Number(true)).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Number(true))
+        .unwrap();
     assert!(session.profile().number_mode);
 
     session.execute_primary(PrimaryCommand::Cols).unwrap();
@@ -115,10 +119,14 @@ fn csr_scroll_mode_uses_explicit_counts_when_provided() {
         .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
         .unwrap();
 
-    session.execute_primary(PrimaryCommand::Down(Some(2))).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Down(Some(2)))
+        .unwrap();
     assert_eq!(session.view().top_row, 2);
 
-    session.execute_primary(PrimaryCommand::Up(Some(1))).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Up(Some(1)))
+        .unwrap();
     assert_eq!(session.view().top_row, 1);
 }
 
@@ -130,8 +138,12 @@ fn csr_scroll_down_places_the_cursor_row_at_the_top_of_the_view() {
     session
         .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
         .unwrap();
-    session.execute_primary(PrimaryCommand::Locate { target: 4 }).unwrap();
-    session.execute_primary(PrimaryCommand::Up(Some(2))).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Locate { target: 4 })
+        .unwrap();
+    session
+        .execute_primary(PrimaryCommand::Up(Some(2)))
+        .unwrap();
 
     session.execute_primary(PrimaryCommand::Down(None)).unwrap();
 
@@ -147,8 +159,12 @@ fn csr_scroll_up_places_the_cursor_row_at_the_bottom_of_the_view_when_possible()
     session
         .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
         .unwrap();
-    session.execute_primary(PrimaryCommand::Locate { target: 5 }).unwrap();
-    session.execute_primary(PrimaryCommand::Up(Some(1))).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Locate { target: 5 })
+        .unwrap();
+    session
+        .execute_primary(PrimaryCommand::Up(Some(1)))
+        .unwrap();
 
     session.execute_primary(PrimaryCommand::Up(None)).unwrap();
 
@@ -336,7 +352,9 @@ fn text_split_command_splits_at_the_cursor_and_inserts_requested_blank_lines() {
     session.move_cursor_right();
     session.move_cursor_right();
     session.move_cursor_right();
-    session.execute_prefix(0, PrefixCommand::TextSplit(2)).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::TextSplit(2))
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "ALPHA\n\n\n BETA GAMMA\n");
     assert_eq!(session.view().cursor_row, 3);
@@ -351,7 +369,9 @@ fn text_flow_command_rewraps_a_paragraph_within_bounds() {
     session
         .execute_primary(PrimaryCommand::Bounds(Some((1, 8))))
         .unwrap();
-    session.execute_prefix(0, PrefixCommand::TextFlow(None)).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::TextFlow(None))
+        .unwrap();
 
     assert_eq!(
         session.buffer().to_text(),
@@ -365,7 +385,9 @@ fn text_entry_command_reserves_requested_lines_and_activates_mode() {
     let buffer = EditBuffer::from_text("\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(0, PrefixCommand::TextEntry(2)).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::TextEntry(2))
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "\n\n\n");
     assert_eq!(session.text_entry_mode().unwrap().start_row, 0);
@@ -381,7 +403,9 @@ fn text_entry_wraps_at_the_right_bound_and_enter_ends_the_mode() {
     session
         .execute_primary(PrimaryCommand::Bounds(Some((1, 4))))
         .unwrap();
-    session.execute_prefix(0, PrefixCommand::TextEntry(1)).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::TextEntry(1))
+        .unwrap();
 
     for ch in ['A', 'B', 'C', 'D', 'E'] {
         session.text_entry_insert_char(ch).unwrap();
@@ -561,7 +585,9 @@ fn lowercase_line_command_respects_bounds() {
         .execute_primary(PrimaryCommand::Bounds(Some((6, 9))))
         .unwrap();
 
-    session.execute_prefix(0, PrefixCommand::Lowercase(1)).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::Lowercase(1))
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "ABCD efgh\n");
 }
@@ -571,7 +597,9 @@ fn uppercase_count_line_command_updates_multiple_lines() {
     let buffer = EditBuffer::from_text("ab\ncd\nef\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(0, PrefixCommand::Uppercase(2)).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::Uppercase(2))
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "AB\nCD\nef\n");
 }
@@ -581,8 +609,12 @@ fn lowercase_block_updates_the_marked_range() {
     let buffer = EditBuffer::from_text("AB\nCD\nEF\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(0, PrefixCommand::LowercaseBlock).unwrap();
-    session.execute_prefix(1, PrefixCommand::LowercaseBlock).unwrap();
+    session
+        .execute_prefix(0, PrefixCommand::LowercaseBlock)
+        .unwrap();
+    session
+        .execute_prefix(1, PrefixCommand::LowercaseBlock)
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "ab\ncd\nEF\n");
 }
@@ -603,8 +635,12 @@ fn exclude_block_hides_the_full_marked_range() {
     let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(1, PrefixCommand::ExcludeBlock).unwrap();
-    session.execute_prefix(3, PrefixCommand::ExcludeBlock).unwrap();
+    session
+        .execute_prefix(1, PrefixCommand::ExcludeBlock)
+        .unwrap();
+    session
+        .execute_prefix(3, PrefixCommand::ExcludeBlock)
+        .unwrap();
 
     assert!(!session.buffer().records()[0].excluded);
     assert!(session.buffer().records()[1].excluded);
@@ -644,10 +680,18 @@ fn show_restores_only_the_excluded_block_at_the_selected_row() {
     let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\nF\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(1, PrefixCommand::ExcludeBlock).unwrap();
-    session.execute_prefix(2, PrefixCommand::ExcludeBlock).unwrap();
-    session.execute_prefix(4, PrefixCommand::ExcludeBlock).unwrap();
-    session.execute_prefix(4, PrefixCommand::ExcludeBlock).unwrap();
+    session
+        .execute_prefix(1, PrefixCommand::ExcludeBlock)
+        .unwrap();
+    session
+        .execute_prefix(2, PrefixCommand::ExcludeBlock)
+        .unwrap();
+    session
+        .execute_prefix(4, PrefixCommand::ExcludeBlock)
+        .unwrap();
+    session
+        .execute_prefix(4, PrefixCommand::ExcludeBlock)
+        .unwrap();
 
     session.execute_prefix(1, PrefixCommand::Show).unwrap();
 
@@ -726,8 +770,12 @@ fn delete_block_removes_the_marked_range() {
     let buffer = EditBuffer::from_text("A\nB\nC\nD\nE\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(1, PrefixCommand::DeleteBlock).unwrap();
-    session.execute_prefix(3, PrefixCommand::DeleteBlock).unwrap();
+    session
+        .execute_prefix(1, PrefixCommand::DeleteBlock)
+        .unwrap();
+    session
+        .execute_prefix(3, PrefixCommand::DeleteBlock)
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "A\nE\n");
     assert_eq!(session.message().unwrap().text, "3 lines deleted");
@@ -738,8 +786,12 @@ fn repeat_block_repeats_the_marked_range_below_the_block() {
     let buffer = EditBuffer::from_text("A\nB\nC\nD\n").unwrap();
     let mut session = EditorSession::new(buffer);
 
-    session.execute_prefix(1, PrefixCommand::RepeatBlock).unwrap();
-    session.execute_prefix(2, PrefixCommand::RepeatBlock).unwrap();
+    session
+        .execute_prefix(1, PrefixCommand::RepeatBlock)
+        .unwrap();
+    session
+        .execute_prefix(2, PrefixCommand::RepeatBlock)
+        .unwrap();
 
     assert_eq!(session.buffer().to_text(), "A\nB\nC\nB\nC\nD\n");
     assert_eq!(session.message().unwrap().text, "2 lines repeated");
@@ -753,7 +805,10 @@ fn after_sets_a_destination_marker_without_inserting_a_blank_line() {
     session.execute_prefix(1, PrefixCommand::After).unwrap();
 
     assert_eq!(session.buffer().to_text(), "A\nB\nC\n");
-    assert_eq!(session.pending_destination(), Some(ispf_core::Destination::After(1)));
+    assert_eq!(
+        session.pending_destination(),
+        Some(ispf_core::Destination::After(1))
+    );
     assert_eq!(session.message().unwrap().text, "After destination set");
 }
 
@@ -878,8 +933,12 @@ fn overlay_block_requires_matching_source_and_target_lengths() {
 
     session.execute_prefix(0, PrefixCommand::CopyBlock).unwrap();
     session.execute_prefix(1, PrefixCommand::CopyBlock).unwrap();
-    session.execute_prefix(2, PrefixCommand::OverlayBlock).unwrap();
-    let err = session.execute_prefix(4, PrefixCommand::OverlayBlock).unwrap_err();
+    session
+        .execute_prefix(2, PrefixCommand::OverlayBlock)
+        .unwrap();
+    let err = session
+        .execute_prefix(4, PrefixCommand::OverlayBlock)
+        .unwrap_err();
 
     assert_eq!(err, "Overlay target must match source line count");
     assert_eq!(

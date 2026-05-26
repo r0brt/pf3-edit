@@ -147,8 +147,12 @@ impl EditorSession {
             .iter()
             .map(|record| record.text.clone())
             .collect();
-        let target_rows =
-            overlay_target_rows(lines.len(), target_start, target_end, self.buffer.records().len())?;
+        let target_rows = overlay_target_rows(
+            lines.len(),
+            target_start,
+            target_end,
+            self.buffer.records().len(),
+        )?;
 
         for (source, target_row) in lines.iter().zip(target_rows.iter().copied()) {
             let previous = self
@@ -191,8 +195,12 @@ impl EditorSession {
             .iter()
             .map(|record| record.text.clone())
             .collect();
-        let target_rows =
-            overlay_target_rows(lines.len(), target_start, target_end, self.buffer.records().len())?;
+        let target_rows = overlay_target_rows(
+            lines.len(),
+            target_start,
+            target_end,
+            self.buffer.records().len(),
+        )?;
 
         if target_rows.iter().any(|row| (start..=end).contains(row)) {
             self.message = Some(SessionMessage {

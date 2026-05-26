@@ -39,7 +39,9 @@ fn renders_command_line_line_command_area_and_data_rows() {
 #[test]
 fn renders_line_numbers_when_number_mode_is_enabled() {
     let mut session = EditorSession::new(EditBuffer::from_text("ONE\n").unwrap());
-    session.execute_primary(PrimaryCommand::Number(true)).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Number(true))
+        .unwrap();
 
     let screen = render_screen(&session, 80, 24);
 
@@ -74,10 +76,7 @@ fn title_includes_file_name_and_dirty_marker() {
     let file_name = path.file_name().unwrap().to_string_lossy().to_string();
 
     let mut session = EditorSession::new(EditBuffer::from_path(&path).unwrap());
-    assert_eq!(
-        render_screen(&session, 80, 24).title,
-        file_name
-    );
+    assert_eq!(render_screen(&session, 80, 24).title, file_name);
 
     session.insert_char('X').unwrap();
 
@@ -131,10 +130,7 @@ fn bounds_command_displays_a_bounds_indicator_line() {
 
     let screen = render_screen(&session, 80, 24);
 
-    let bounds_line = screen
-        .bounds_line
-        .as_deref()
-        .expect("bounds line missing");
+    let bounds_line = screen.bounds_line.as_deref().expect("bounds line missing");
     assert!(bounds_line.starts_with("=BNDS>"));
     assert!(bounds_line.contains('|'));
 }
@@ -142,7 +138,9 @@ fn bounds_command_displays_a_bounds_indicator_line() {
 #[test]
 fn top_of_data_banner_disappears_when_scrolled_down() {
     let mut session = EditorSession::new(EditBuffer::from_text("ONE\nTWO\nTHREE\n").unwrap());
-    session.execute_primary(PrimaryCommand::Down(Some(1))).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Down(Some(1)))
+        .unwrap();
 
     let screen = render_screen(&session, 80, 24);
 
@@ -163,7 +161,9 @@ fn bottom_of_data_banner_disappears_when_more_rows_remain_below() {
 #[test]
 fn excluded_ranges_render_as_single_placeholder_rows() {
     let mut session = EditorSession::new(EditBuffer::from_text("A\nB\nC\nD\nE\n").unwrap());
-    session.execute_primary(PrimaryCommand::Number(true)).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Number(true))
+        .unwrap();
     session
         .execute_prefix(1, ispf_command::PrefixCommand::ExcludeBlock)
         .unwrap();
