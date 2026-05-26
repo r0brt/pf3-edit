@@ -644,6 +644,26 @@ pub(super) fn find_first_in_bounds(
     Some(start_char + matched_chars)
 }
 
+pub(super) fn find_first_in_bounds_after(
+    text: &str,
+    pattern: &str,
+    bounds: Option<(usize, usize)>,
+    after_col: usize,
+) -> Option<usize> {
+    let (start_char, end_char) = bounded_char_range(text, bounds);
+    let search_start_char = after_col.saturating_add(1).max(start_char);
+    if search_start_char > end_char {
+        return None;
+    }
+
+    let search_start_byte = char_to_byte_index(text, search_start_char);
+    let end_byte = char_to_byte_index(text, end_char);
+    let bounded = &text[search_start_byte..end_byte];
+    let found = bounded.find(pattern)?;
+    let matched_chars = bounded[..found].chars().count();
+    Some(search_start_char + matched_chars)
+}
+
 fn bounded_match_position<'a>(
     text: &'a str,
     pattern: &str,

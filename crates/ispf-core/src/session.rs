@@ -2,7 +2,7 @@ mod editing;
 mod navigation;
 mod transfers;
 
-use self::editing::{find_first_in_bounds, replace_first_in_bounds};
+use self::editing::{find_first_in_bounds, find_first_in_bounds_after, replace_first_in_bounds};
 use crate::{CapsMode, EditBuffer, EditProfile, UndoEntry, UndoStack};
 use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
 
@@ -241,7 +241,53 @@ impl EditorSession {
                     .last_find
                     .clone()
                     .ok_or_else(|| "No previous FIND pattern".to_string())?;
-                self.execute_primary(PrimaryCommand::Find { pattern })?;
+                let current_row = self.view.cursor_row;
+                let current_col = self.view.cursor_col;
+
+                let next_match = self
+                    .buffer
+                    .records()
+                    .get(current_row)
+                    .and_then(|record| {
+                        find_first_in_bounds_after(
+                            record.text.as_str(),
+                            &pattern,
+                            self.profile.bounds,
+                            current_col,
+                        )
+                        .map(|col| (current_row, col))
+                    })
+                    .or_else(|| {
+                        self.buffer
+                            .records()
+                            .iter()
+                            .enumerate()
+                            .skip(current_row.saturating_add(1))
+                            .find_map(|(index, record)| {
+                                find_first_in_bounds(
+                                    record.text.as_str(),
+                                    &pattern,
+                                    self.profile.bounds,
+                                )
+                                .map(|col| (index, col))
+                            })
+                    });
+
+                if let Some((index, col)) = next_match {
+                    self.view.cursor_row = index;
+                    self.view.top_row = index;
+                    self.view.cursor_col = col;
+                    self.desired_cursor_col = col;
+                    self.message = Some(SessionMessage {
+                        text: "FIND completed".into(),
+                        is_error: false,
+                    });
+                } else {
+                    self.message = Some(SessionMessage {
+                        text: "Pattern not found".into(),
+                        is_error: true,
+                    });
+                }
             }
             PrimaryCommand::Change { from, to } => {
                 self.last_change = Some((from.clone(), to.clone()));

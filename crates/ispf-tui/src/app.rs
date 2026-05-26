@@ -1309,17 +1309,16 @@ mod tests {
 
     #[test]
     fn f5_repeats_the_last_find_and_returns_focus_to_data_area() {
-        let mut app = App::new(EditBuffer::from_text("ONE\nTWO\nTHREE TWO\n").unwrap());
+        let mut app = App::new(EditBuffer::from_text("ONE\nTWO\nTHREE TWO\nFOUR TWO\n").unwrap());
 
         app.handle_action(AppAction::ToggleFocus).unwrap();
         for ch in "FIND TWO".chars() {
             app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
         }
         app.handle_action(AppAction::Execute).unwrap();
-        app.handle_action(AppAction::CursorDown).unwrap();
         app.handle_key(KeyEvent::from(KeyCode::F(5))).unwrap();
 
-        assert_eq!(app.session().view().cursor_row, 1);
+        assert_eq!(app.session().view().cursor_row, 2);
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
     }
 

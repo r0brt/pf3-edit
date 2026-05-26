@@ -422,6 +422,25 @@ fn find_positions_cursor_on_matching_record() {
 }
 
 #[test]
+fn rfind_moves_to_the_next_occurrence_after_the_current_match() {
+    let buffer = EditBuffer::from_text("ONE\nTWO\nTHREE TWO\nFOUR TWO\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Find {
+            pattern: "TWO".into(),
+        })
+        .unwrap();
+    assert_eq!(session.view().cursor_row, 1);
+
+    session.execute_primary(PrimaryCommand::RFind).unwrap();
+    assert_eq!(session.view().cursor_row, 2);
+
+    session.execute_primary(PrimaryCommand::RFind).unwrap();
+    assert_eq!(session.view().cursor_row, 3);
+}
+
+#[test]
 fn locate_moves_cursor_and_view_to_the_requested_line_number() {
     let buffer = EditBuffer::from_text("A\nB\nC\nD\n").unwrap();
     let mut session = EditorSession::new(buffer);
