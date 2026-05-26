@@ -21,6 +21,25 @@ Current implemented highlights:
 
 Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
 
+## Supported Today
+
+- single-file local editing in a host-like TUI
+- ISPF-style primary command field and line command field
+- bounds-aware direct editing, split/join, text flow, and text entry
+- search/change/repeat-search/repeat-change flows
+- copy/move/overlay/exclude workflows
+- profile-driven `PAGE`, `HALF`, and `CSR` scrolling
+- local development workflow via `Makefile`, `cargo test`, and `cargo clippy`
+
+## Not Yet Supported
+
+- dataset/member navigation
+- macros or REXX
+- persistent profiles
+- full browse-mode semantics
+- the broader long tail of ISPF command coverage
+- packaged release binaries
+
 ## Run
 
 ```bash
@@ -39,6 +58,12 @@ Without a file argument, the editor starts with a tiny in-memory buffer.
 
 ```bash
 cargo install --path crates/ispf-tui
+```
+
+You can also install directly from GitHub:
+
+```bash
+cargo install --git https://github.com/r0brt/pf3-edit.git ispf-tui --bin pf3-edit
 ```
 
 This installs the executable as:
@@ -150,6 +175,12 @@ Primary and line commands are parsed case-insensitively. Command arguments keep 
 cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
+
+CI runs the same checks plus `cargo fmt --all -- --check` on GitHub Actions.
+
+## Release Notes
+
+- Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Superpowers Docs
 
