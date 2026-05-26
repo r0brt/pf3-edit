@@ -2,4 +2,4 @@ mod prefix;
 mod primary;
 
 pub use prefix::{PrefixCommand, parse_prefix};
-pub use primary::{PrimaryCommand, ScrollMode, parse_primary};
+pub use primary::{HorizontalScroll, PrimaryCommand, ScrollMode, parse_primary};

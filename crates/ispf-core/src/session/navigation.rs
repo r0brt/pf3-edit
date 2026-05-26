@@ -1,5 +1,8 @@
 use super::*;
 
+const DATA_COLUMNS: usize = 144;
+const DEFAULT_HORIZONTAL_SCROLL_STEP: usize = 8;
+
 impl EditorSession {
     pub(super) fn effective_vertical_scroll_rows(&self) -> usize {
         match self.profile.scroll_mode {
@@ -89,6 +92,54 @@ impl EditorSession {
                 self.view.top_row = self.view.top_row.saturating_add(step);
                 self.clamp_top_row();
             }
+        }
+    }
+
+    pub fn scroll_view_left(&mut self, scroll: HorizontalScroll) {
+        match scroll {
+            HorizontalScroll::Count(count) => {
+                self.view.left_col = self.view.left_col.saturating_sub(count);
+            }
+            HorizontalScroll::Max => {
+                self.view.left_col = 0;
+            }
+            HorizontalScroll::ByMode => match self.profile.scroll_mode {
+                ScrollMode::Csr => {
+                    let anchored = self
+                        .view
+                        .cursor_col
+                        .saturating_sub(DATA_COLUMNS.saturating_sub(1));
+                    self.view.left_col = anchored.min(self.max_left_col());
+                }
+                ScrollMode::Page | ScrollMode::Half => {
+                    self.view.left_col = self
+                        .view
+                        .left_col
+                        .saturating_sub(DEFAULT_HORIZONTAL_SCROLL_STEP);
+                }
+            },
+        }
+    }
+
+    pub fn scroll_view_right(&mut self, scroll: HorizontalScroll) {
+        match scroll {
+            HorizontalScroll::Count(count) => {
+                self.view.left_col = self.view.left_col.saturating_add(count);
+            }
+            HorizontalScroll::Max => {
+                self.view.left_col = self.max_left_col();
+            }
+            HorizontalScroll::ByMode => match self.profile.scroll_mode {
+                ScrollMode::Csr => {
+                    self.view.left_col = self.view.cursor_col;
+                }
+                ScrollMode::Page | ScrollMode::Half => {
+                    self.view.left_col = self
+                        .view
+                        .left_col
+                        .saturating_add(DEFAULT_HORIZONTAL_SCROLL_STEP);
+                }
+            },
         }
     }
 
@@ -196,5 +247,23 @@ impl EditorSession {
             .take(max_index.saturating_add(1))
             .rev()
             .find_map(|(index, record)| (!record.excluded).then_some(index))
+    }
+
+    fn max_left_col(&self) -> usize {
+        let max_record_width = self
+            .buffer
+            .records()
+            .iter()
+            .map(|record| record.text.chars().count())
+            .max()
+            .unwrap_or(0);
+        let bounds_width = self
+            .profile
+            .bounds
+            .map(|(_, right)| right)
+            .unwrap_or(DATA_COLUMNS);
+        max_record_width
+            .max(bounds_width)
+            .saturating_sub(DATA_COLUMNS)
     }
 }

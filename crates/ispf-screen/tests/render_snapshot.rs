@@ -1,4 +1,4 @@
-use ispf_command::PrimaryCommand;
+use ispf_command::{HorizontalScroll, PrimaryCommand};
 use ispf_core::{EditBuffer, EditorSession};
 use ispf_screen::render_screen;
 use std::path::PathBuf;
@@ -99,7 +99,9 @@ fn status_summary_reflects_active_area_and_cursor_position() {
 #[test]
 fn columns_and_footer_match_the_ispf_style_shell() {
     let mut session = EditorSession::new(EditBuffer::from_text("ONE\n").unwrap());
-    session.execute_primary(PrimaryCommand::Right(8)).unwrap();
+    session
+        .execute_primary(PrimaryCommand::Right(HorizontalScroll::Count(8)))
+        .unwrap();
 
     let screen = render_screen(&session, 80, 24);
 

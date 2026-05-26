@@ -4,7 +4,7 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ispf_command::{PrimaryCommand, parse_prefix, parse_primary};
+use ispf_command::{HorizontalScroll, PrimaryCommand, parse_prefix, parse_primary};
 use ispf_core::{ActiveArea, EditBuffer, EditorSession};
 use ispf_screen::{ScreenModel, render_screen};
 use ratatui::{
@@ -126,11 +126,11 @@ impl App {
             }
             AppAction::ScrollLeft => self
                 .session
-                .execute_primary(PrimaryCommand::Left(8))
+                .execute_primary(PrimaryCommand::Left(HorizontalScroll::ByMode))
                 .map_err(anyhow::Error::msg)?,
             AppAction::ScrollRight => self
                 .session
-                .execute_primary(PrimaryCommand::Right(8))
+                .execute_primary(PrimaryCommand::Right(HorizontalScroll::ByMode))
                 .map_err(anyhow::Error::msg)?,
             AppAction::Swap => {
                 self.ui_message = Some("F9 Swap is not implemented yet".into());
@@ -1176,6 +1176,24 @@ mod tests {
 
         assert_eq!(app.session().view().cursor_row, 4);
         assert_eq!(app.session().view().top_row, 1);
+    }
+
+    #[test]
+    fn csr_horizontal_scroll_actions_use_the_cursor_column_as_the_scroll_anchor() {
+        let mut app = App::new(EditBuffer::from_text(&format!("{}\n", "X".repeat(220))).unwrap());
+        app.session
+            .execute_primary(PrimaryCommand::Scroll(ispf_command::ScrollMode::Csr))
+            .unwrap();
+
+        for _ in 0..80 {
+            app.session.move_cursor_right();
+        }
+
+        app.handle_action(AppAction::ScrollRight).unwrap();
+        assert_eq!(app.session().view().left_col, 80);
+
+        app.handle_action(AppAction::ScrollLeft).unwrap();
+        assert_eq!(app.session().view().left_col, 0);
     }
 
     #[test]

@@ -5,6 +5,13 @@ pub enum ScrollMode {
     Csr,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum HorizontalScroll {
+    Count(usize),
+    Max,
+    ByMode,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PrimaryCommand {
     Save,
@@ -20,8 +27,8 @@ pub enum PrimaryCommand {
     Reset,
     Up(Option<usize>),
     Down(Option<usize>),
-    Left(usize),
-    Right(usize),
+    Left(HorizontalScroll),
+    Right(HorizontalScroll),
     Bounds(Option<(usize, usize)>),
     Number(bool),
     Caps(bool),
@@ -90,16 +97,18 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
                 .parse()
                 .map_err(|_| "invalid DOWN count".to_string())?,
         ))),
-        ["LEFT", _] => Ok(PrimaryCommand::Left(
+        ["LEFT", "MAX"] => Ok(PrimaryCommand::Left(HorizontalScroll::Max)),
+        ["LEFT", _] => Ok(PrimaryCommand::Left(HorizontalScroll::Count(
             parts[1]
                 .parse()
                 .map_err(|_| "invalid LEFT count".to_string())?,
-        )),
-        ["RIGHT", _] => Ok(PrimaryCommand::Right(
+        ))),
+        ["RIGHT", "MAX"] => Ok(PrimaryCommand::Right(HorizontalScroll::Max)),
+        ["RIGHT", _] => Ok(PrimaryCommand::Right(HorizontalScroll::Count(
             parts[1]
                 .parse()
                 .map_err(|_| "invalid RIGHT count".to_string())?,
-        )),
+        ))),
         _ => Err(format!("unknown primary command: {input}")),
     }
 }

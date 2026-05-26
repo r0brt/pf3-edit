@@ -4,7 +4,7 @@ mod transfers;
 
 use self::editing::{find_first_in_bounds, find_first_in_bounds_after, replace_first_in_bounds};
 use crate::{CapsMode, EditBuffer, EditProfile, UndoEntry, UndoStack};
-use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
+use ispf_command::{HorizontalScroll, PrefixCommand, PrimaryCommand, ScrollMode};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ActiveArea {
@@ -356,10 +356,8 @@ impl EditorSession {
             PrimaryCommand::Scroll(mode) => self.profile.scroll_mode = mode,
             PrimaryCommand::Down(count) => self.scroll_view_down(count),
             PrimaryCommand::Up(count) => self.scroll_view_up(count),
-            PrimaryCommand::Left(count) => {
-                self.view.left_col = self.view.left_col.saturating_sub(count);
-            }
-            PrimaryCommand::Right(count) => self.view.left_col += count,
+            PrimaryCommand::Left(scroll) => self.scroll_view_left(scroll),
+            PrimaryCommand::Right(scroll) => self.scroll_view_right(scroll),
             PrimaryCommand::Number(enabled) => self.profile.number_mode = enabled,
             PrimaryCommand::Caps(enabled) => {
                 self.profile.caps_mode = if enabled { CapsMode::On } else { CapsMode::Off };

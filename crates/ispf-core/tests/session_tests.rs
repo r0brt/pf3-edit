@@ -1,4 +1,4 @@
-use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode};
+use ispf_command::{HorizontalScroll, PrefixCommand, PrimaryCommand, ScrollMode};
 use ispf_core::{
     ActiveArea, CapsMode, EditBuffer, EditProfile, EditorSession, UndoEntry, UndoStack,
 };
@@ -170,6 +170,96 @@ fn csr_scroll_up_places_the_cursor_row_at_the_bottom_of_the_view_when_possible()
 
     assert_eq!(session.view().cursor_row, 4);
     assert_eq!(session.view().top_row, 1);
+}
+
+#[test]
+fn horizontal_scroll_counts_shift_the_viewport_by_exact_columns() {
+    let buffer = EditBuffer::from_text("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Right(HorizontalScroll::Count(12)))
+        .unwrap();
+    assert_eq!(session.view().left_col, 12);
+
+    session
+        .execute_primary(PrimaryCommand::Left(HorizontalScroll::Count(5)))
+        .unwrap();
+    assert_eq!(session.view().left_col, 7);
+}
+
+#[test]
+fn horizontal_scroll_max_jumps_to_the_edges_of_the_viewport() {
+    let buffer = EditBuffer::from_text(&format!("{}\n", "X".repeat(220))).unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Right(HorizontalScroll::Max))
+        .unwrap();
+    assert_eq!(session.view().left_col, 76);
+
+    session
+        .execute_primary(PrimaryCommand::Left(HorizontalScroll::Max))
+        .unwrap();
+    assert_eq!(session.view().left_col, 0);
+}
+
+#[test]
+fn horizontal_scroll_max_respects_wider_bounds() {
+    let buffer = EditBuffer::from_text("SHORT\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((1, 180))))
+        .unwrap();
+
+    session
+        .execute_primary(PrimaryCommand::Right(HorizontalScroll::Max))
+        .unwrap();
+
+    assert_eq!(session.view().left_col, 36);
+}
+
+#[test]
+fn csr_horizontal_scroll_anchors_the_cursor_column_at_the_view_edges() {
+    let buffer = EditBuffer::from_text(&format!("{}\n", "X".repeat(220))).unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
+        .unwrap();
+
+    for _ in 0..80 {
+        session.move_cursor_right();
+    }
+    assert_eq!(session.view().cursor_col, 80);
+
+    session
+        .execute_primary(PrimaryCommand::Right(HorizontalScroll::ByMode))
+        .unwrap();
+    assert_eq!(session.view().left_col, 80);
+
+    session
+        .execute_primary(PrimaryCommand::Left(HorizontalScroll::ByMode))
+        .unwrap();
+    assert_eq!(session.view().left_col, 0);
+}
+
+#[test]
+fn csr_horizontal_scroll_uses_explicit_counts_when_provided() {
+    let buffer = EditBuffer::from_text("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Scroll(ScrollMode::Csr))
+        .unwrap();
+
+    session
+        .execute_primary(PrimaryCommand::Right(HorizontalScroll::Count(9)))
+        .unwrap();
+    assert_eq!(session.view().left_col, 9);
+
+    session
+        .execute_primary(PrimaryCommand::Left(HorizontalScroll::Count(4)))
+        .unwrap();
+    assert_eq!(session.view().left_col, 5);
 }
 
 #[test]

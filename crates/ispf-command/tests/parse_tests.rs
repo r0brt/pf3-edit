@@ -1,4 +1,6 @@
-use ispf_command::{PrefixCommand, PrimaryCommand, ScrollMode, parse_prefix, parse_primary};
+use ispf_command::{
+    HorizontalScroll, PrefixCommand, PrimaryCommand, ScrollMode, parse_prefix, parse_primary,
+};
 
 #[test]
 fn parses_basic_primary_commands() {
@@ -104,6 +106,22 @@ fn parses_find_and_change_commands() {
     );
     assert_eq!(parse_primary("UP").unwrap(), PrimaryCommand::Up(None));
     assert_eq!(parse_primary("DOWN").unwrap(), PrimaryCommand::Down(None));
+    assert_eq!(
+        parse_primary("LEFT 8").unwrap(),
+        PrimaryCommand::Left(HorizontalScroll::Count(8))
+    );
+    assert_eq!(
+        parse_primary("RIGHT 12").unwrap(),
+        PrimaryCommand::Right(HorizontalScroll::Count(12))
+    );
+    assert_eq!(
+        parse_primary("LEFT MAX").unwrap(),
+        PrimaryCommand::Left(HorizontalScroll::Max)
+    );
+    assert_eq!(
+        parse_primary("right max").unwrap(),
+        PrimaryCommand::Right(HorizontalScroll::Max)
+    );
 }
 
 #[test]

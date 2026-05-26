@@ -1,7 +1,7 @@
 # ISPF Editor Local Rebuild Design
 
 Date: 2026-05-23
-Status: Implemented and extended in code, reviewed 2026-05-26 (scroll semantics update)
+Status: Implemented and extended in code, reviewed 2026-05-26 (horizontal scroll semantics update)
 
 ## Goal
 
@@ -48,6 +48,7 @@ Implemented highlights:
 - stronger `BOUNDS` invariants: `TS` and direct line splits reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 - real profile-driven scroll modes (`PAGE`, `HALF`, `CSR`) now drive the visible `Scroll ===>` value and PF7/PF8 viewport behavior
 - `CSR` vertical scrolling is now cursor-anchored in the ISPF style: `DOWN` uses the cursor row as the next top row and `UP` places the cursor row at the bottom of the next view when possible, while explicit counts still scroll numerically
+- horizontal scroll now distinguishes exact counts from mode-driven PF10/PF11 behavior: `LEFT/RIGHT MAX` jump to the edges, `LEFT/RIGHT n` scroll exact columns, and `CSR` horizontal scrolling anchors the cursor column at the viewport edge in the ISPF style
 - public CLI polish: the binary is exposed as `pf3-edit`, supports `--help`, `--version`, and `--debug-keys`, and documents a direct `cargo install --path crates/ispf-tui` workflow
 - release-facing project polish through a public changelog, clearer README support boundaries, and GitHub Actions CI covering `fmt`, `test`, and `clippy`
 
@@ -55,7 +56,7 @@ Current focus for the next `v1.0`-oriented block:
 
 - keep hardening release-critical editing and viewport invariants
 - continue tightening release readiness, documentation clarity, and installability alongside code
-- keep horizontal scroll semantics and remaining command-edge cases trustworthy before widening command coverage
+- keep search/replace edge cases and remaining command-edge cases trustworthy before widening command coverage
 
 Still intentionally outside the implemented scope:
 

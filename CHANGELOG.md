@@ -21,6 +21,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 ### Changed
 
 - scroll behavior now follows profile-driven `PAGE`, `HALF`, and `CSR` modes
+- horizontal scrolling now distinguishes exact counts, `MAX`, and mode-driven PF10/PF11 behavior, including cursor-anchored `CSR` semantics
 - command parsing is case-insensitive while preserving operand case
 - line command workflows now support command-line `:` variants
 - session internals are split into focused editing, navigation, and transfer modules
