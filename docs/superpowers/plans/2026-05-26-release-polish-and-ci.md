@@ -44,6 +44,8 @@
 - [ ] Add a `Not Yet Supported` section to set honest boundaries.
 - [ ] Document direct GitHub install via cargo in addition to local path install.
 - [ ] Link the changelog and explain that CI mirrors the published verification commands.
+- [ ] Add a compact quick-start plus key/command matrices for public readers.
+- [ ] Add a `Known Limitations` section that is explicit about current release boundaries.
 
 ## Task 4: Keep Design Docs Current
 

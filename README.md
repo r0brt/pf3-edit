@@ -54,6 +54,24 @@ cargo run -p ispf-tui -- /path/to/file.txt
 
 Without a file argument, the editor starts with a tiny in-memory buffer.
 
+## Quick Start
+
+1. Start the editor on a file:
+
+   ```bash
+   pf3-edit path/to/file.txt
+   ```
+
+2. `Tab` into `Command ===>` and try:
+
+   ```text
+   FIND text
+   ```
+
+3. Use `F5` for `RFIND`, `F6` for `RCHANGE`, and `F3` to save and exit.
+
+4. `Tab` into the line command field to try commands like `D`, `R`, `X`, `TS`, `TF`, or `TE`.
+
 ## Install
 
 ```bash
@@ -118,6 +136,23 @@ make check
 - `Enter` in `TE` mode: finish text entry
 - `Shift+Enter` is disabled while `TE` mode is active
 
+## Key Matrix
+
+| Area | Key | Behavior |
+| --- | --- | --- |
+| global | `Tab` / `Shift+Tab` | cycle focus forward / backward |
+| global | `F3` | save and exit |
+| global | `F12` | cancel session |
+| command field | `Enter` | execute primary command |
+| command field | `F5` / `F6` | repeat find / repeat change |
+| line command field | `Enter` | execute pending line command(s) |
+| data area | `Enter` | split line at cursor |
+| data area | `Shift+Enter` | insert blank line below |
+| data area | `Ctrl+J` | move cursor down |
+| data area | `Home` / `End` | move to line start / line end |
+| data area | `F7` / `F8` | scroll using active scroll mode |
+| data area | `F10` / `F11` | scroll left / right |
+
 ## Primary Commands
 
 - `SAVE`
@@ -162,6 +197,18 @@ Primary and line commands are parsed case-insensitively. Command arguments keep 
 - `LC`, `LC3`, `LCC`
 - `UC`, `UC2`, `UCC`
 
+## Command Matrix
+
+| Category | Commands |
+| --- | --- |
+| save / session | `SAVE`, `CANCEL`, `END`, `UNDO` |
+| search / replace | `FIND`, `RFIND`, `CHANGE`, `RCHANGE` |
+| navigation / view | `LOCATE`, `L`, `COLS`, `SCROLL`, `BOUNDS`, `RESET`, `NUMBER`, `UNNUM`, `CAPS` |
+| insert / delete | `I`, `In`, `D`, `Dn`, `DD` |
+| repeat / transform | `R`, `Rn`, `RR`, `TS`, `TSn`, `TF`, `TFn`, `TE`, `TEn`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC` |
+| transfer / placement | `C`, `Cn`, `CC`, `M`, `Mn`, `MM`, `A`, `B`, `O`, `OO` |
+| exclude / reveal | `X`, `XX`, `S` |
+
 ## Project Layout
 
 - [`crates/ispf-core`](crates/ispf-core): editor state, buffer, session logic, undo, command execution
@@ -177,6 +224,15 @@ cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 CI runs the same checks plus `cargo fmt --all -- --check` on GitHub Actions.
+
+## Known Limitations
+
+- this is still a single-file local editor, not a dataset/member browser
+- no macros or REXX support yet
+- profiles are session-local and not persisted across runs
+- browse-mode behavior is intentionally incomplete
+- release binaries are not published yet; install currently assumes a Rust toolchain
+- command coverage is strong for the core workflow, but not yet full-ISPF
 
 ## Release Notes
 
