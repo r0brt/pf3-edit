@@ -23,7 +23,9 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 
 ### Changed
 
+- the explicit `v1.0` release audit now considers the current scoped editor ready for a first public `v1.0.0`
 - GitHub workflow actions now target Node-24-ready major versions to remove the current Node-20 deprecation warnings from CI and release runs
+- README now carries an explicit `v1.0` release-checklist/status note so release readiness can be judged against concrete criteria instead of vague momentum
 - the next release line restores alignment between Git tags and embedded binary version metadata
 - README install guidance now documents the staged move from Rust-based installs toward tagged GitHub release binaries
 - release packaging now targets the two stable release lanes first: macOS Apple Silicon and Linux x86_64

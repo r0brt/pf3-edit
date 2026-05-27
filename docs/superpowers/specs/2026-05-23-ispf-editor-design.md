@@ -1,7 +1,7 @@
 # ISPF Editor Local Rebuild Design
 
 Date: 2026-05-23
-Status: Implemented and extended in code, reviewed 2026-05-27 (CI Node-24 actions update)
+Status: Implemented and extended in code, reviewed 2026-05-27 (v1.0 release-candidate audit passed)
 
 ## Goal
 
@@ -59,9 +59,9 @@ Implemented highlights:
 
 Current focus for the next `v1.0`-oriented block:
 
-- keep hardening release-critical editing and viewport invariants
-- continue tightening release readiness, documentation clarity, and first-class installability alongside code
-- keep search/replace edge cases and remaining command-edge cases trustworthy before widening command coverage
+- cut the first scoped `v1.0.0` release from the current stable surface
+- treat follow-up work as post-`v1.0` polish or capability expansion
+- avoid opening broad new command families until the first `v1.0` release is tagged and documented
 
 Still intentionally outside the implemented scope:
 

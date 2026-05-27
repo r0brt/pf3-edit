@@ -21,6 +21,20 @@ Current implemented highlights:
 
 Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
 
+## v1.0 Release Checklist
+
+Current release-candidate checklist:
+
+- editing core is stable across save/cancel/end, overwrite/insert, split/join/delete, and undo
+- search/change plus `RFIND` / `RCHANGE` behave consistently, including wrap and end-of-results reporting
+- bounds and scroll behavior are stable enough for daily single-file editing
+- public install paths exist through Cargo and tagged GitHub release archives
+- known limitations are explicit about what `pf3-edit` does not try to cover yet
+
+Current audit result:
+
+- the project now looks **ready for a scoped `v1.0.0`**, based on green verification, working public release artifacts, and a final release-candidate workflow pass across core editing, search, scroll, and save flows
+
 ## Supported Today
 
 - single-file local editing in a host-like TUI
@@ -252,6 +266,7 @@ CI runs the same checks plus `cargo fmt --all -- --check` on GitHub Actions.
 - Windows packaging is not part of the current release workflow
 - macOS Intel release binaries are temporarily disabled because GitHub's Intel macOS runner availability has proven unreliable for now
 - command coverage is strong for the core workflow, but not yet full-ISPF
+- a final explicit `v1.0` release-candidate workflow audit is still recommended before calling the editor fully `v1.0`
 
 ## Release Notes
 
