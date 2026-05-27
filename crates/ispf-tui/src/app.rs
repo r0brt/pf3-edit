@@ -213,7 +213,11 @@ impl App {
     fn handle_key(&mut self, key: KeyEvent) -> Result<()> {
         let mapped_action = crate::input::map_key(key);
         let should_preempt_text_input = matches!(mapped_action, AppAction::LineFeed)
-            || (mapped_action == AppAction::CursorDown && !key.modifiers.is_empty());
+            || (mapped_action == AppAction::CursorDown && !key.modifiers.is_empty())
+            || (matches!(
+                mapped_action,
+                AppAction::CursorLineStart | AppAction::CursorLineEnd
+            ) && !key.modifiers.is_empty());
         if should_preempt_text_input {
             return self.handle_action(mapped_action);
         }
@@ -865,6 +869,39 @@ mod tests {
 
         assert_eq!(app.session().buffer().records()[0].text(), "A");
         assert_eq!(app.session().view().cursor_col, 1);
+    }
+
+    #[test]
+    fn ctrl_a_and_ctrl_e_move_to_line_start_and_end_in_data_area() {
+        let mut app = App::new(EditBuffer::from_text("ABCD\n").unwrap());
+
+        app.handle_key(KeyEvent::from(KeyCode::Right)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Right)).unwrap();
+        app.handle_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL))
+            .unwrap();
+        assert_eq!(app.session().view().cursor_col, 4);
+
+        app.handle_key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::CONTROL))
+            .unwrap();
+        assert_eq!(app.session().view().cursor_col, 0);
+    }
+
+    #[test]
+    fn insert_on_command_switches_the_data_area_to_insert_mode() {
+        let mut app = App::new(EditBuffer::from_text("ABCD\n").unwrap());
+        super::initialize_startup_focus(&mut app);
+
+        for ch in "INSERT ON".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Right)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('X'))).unwrap();
+
+        assert_eq!(app.session().buffer().records()[0].text(), "AXBCD");
+        assert!(app.screen_model(120, 24).status_summary.contains("INS"));
     }
 
     #[test]

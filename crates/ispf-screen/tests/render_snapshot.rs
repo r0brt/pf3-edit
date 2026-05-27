@@ -93,7 +93,19 @@ fn status_summary_reflects_active_area_and_cursor_position() {
 
     let screen = render_screen(&session, 80, 24);
 
-    assert_eq!(screen.status_summary, "LINE CMD  Ln 2 Col 2");
+    assert_eq!(screen.status_summary, "OVR LINE CMD  Ln 2 Col 2");
+}
+
+#[test]
+fn status_summary_reflects_insert_mode() {
+    let mut session = EditorSession::new(EditBuffer::from_text("ONE\n").unwrap());
+    session
+        .execute_primary(PrimaryCommand::Insert(true))
+        .unwrap();
+
+    let screen = render_screen(&session, 80, 24);
+
+    assert_eq!(screen.status_summary, "INS DATA  Ln 1 Col 1");
 }
 
 #[test]

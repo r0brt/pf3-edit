@@ -31,7 +31,11 @@ impl EditorSession {
             .ok_or_else(|| "invalid row".to_string())?
             .text
             .clone();
-        let updated = overwrite_char_at(&previous, self.view.cursor_col, ch)?;
+        let updated = if self.profile.insert_mode {
+            insert_char_in_mode(&previous, self.profile.bounds, self.view.cursor_col, ch)?
+        } else {
+            overwrite_char_at(&previous, self.view.cursor_col, ch)?
+        };
         self.buffer
             .replace_line(row, &updated)
             .ok_or_else(|| "invalid row".to_string())?;
@@ -534,6 +538,54 @@ fn insert_char_at(text: &str, column: usize, ch: char) -> Result<String, String>
     let mut chars: Vec<char> = text.chars().collect();
     chars.insert(column, ch);
     Ok(chars.into_iter().collect())
+}
+
+fn insert_char_in_mode(
+    text: &str,
+    bounds: Option<(usize, usize)>,
+    column: usize,
+    ch: char,
+) -> Result<String, String> {
+    match bounds {
+        None => {
+            let mut chars: Vec<char> = text.chars().collect();
+            while chars.len() < column {
+                chars.push(' ');
+            }
+            chars.insert(column, ch);
+            Ok(chars.into_iter().collect())
+        }
+        Some((left, right)) => {
+            let start = left.saturating_sub(1);
+            let end = right.saturating_sub(1);
+            if column < start || column > end.saturating_add(1) {
+                return Err("invalid column".to_string());
+            }
+
+            let mut chars: Vec<char> = text.chars().collect();
+            while chars.len() < start {
+                chars.push(' ');
+            }
+
+            let prefix: Vec<char> = chars.iter().take(start).copied().collect();
+            let editable_end_exclusive = (end + 1).min(chars.len());
+            let mut editable: Vec<char> = chars[start..editable_end_exclusive].to_vec();
+            let suffix: Vec<char> = if editable_end_exclusive < chars.len() {
+                chars[editable_end_exclusive..].to_vec()
+            } else {
+                Vec::new()
+            };
+
+            let relative_col = column.saturating_sub(start).min(editable.len());
+            editable.insert(relative_col, ch);
+            let width = end.saturating_sub(start).saturating_add(1);
+            if editable.len() > width {
+                editable.truncate(width);
+            }
+
+            Ok(prefix.into_iter().chain(editable).chain(suffix).collect())
+        }
+    }
 }
 
 fn overwrite_char_at(text: &str, column: usize, ch: char) -> Result<String, String> {

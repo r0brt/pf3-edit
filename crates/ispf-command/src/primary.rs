@@ -32,6 +32,7 @@ pub enum PrimaryCommand {
     Bounds(Option<(usize, usize)>),
     Number(bool),
     Caps(bool),
+    Insert(bool),
     Undo,
 }
 
@@ -65,6 +66,8 @@ pub fn parse_primary(input: &str) -> Result<PrimaryCommand, String> {
         ["NUMBER"] => Ok(PrimaryCommand::Number(true)),
         ["CAPS", "ON"] => Ok(PrimaryCommand::Caps(true)),
         ["CAPS", "OFF"] => Ok(PrimaryCommand::Caps(false)),
+        ["INSERT", "ON"] => Ok(PrimaryCommand::Insert(true)),
+        ["INSERT", "OFF"] => Ok(PrimaryCommand::Insert(false)),
         ["FIND", rest @ ..] if !rest.is_empty() => Ok(PrimaryCommand::Find {
             pattern: parts[1..].join(" "),
         }),

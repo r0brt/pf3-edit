@@ -197,6 +197,11 @@ fn columns_summary(session: &EditorSession) -> String {
 }
 
 fn status_summary(session: &EditorSession) -> String {
+    let edit_mode = if session.profile().insert_mode {
+        "INS"
+    } else {
+        "OVR"
+    };
     let area = match session.view().active_area {
         ActiveArea::DataArea => "DATA",
         ActiveArea::LineCommandArea => "LINE CMD",
@@ -204,7 +209,7 @@ fn status_summary(session: &EditorSession) -> String {
     };
 
     format!(
-        "{area}  Ln {} Col {}",
+        "{edit_mode} {area}  Ln {} Col {}",
         session.view().cursor_row + 1,
         session.view().cursor_col + 1
     )

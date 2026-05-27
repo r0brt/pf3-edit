@@ -15,7 +15,7 @@ Current implemented highlights:
 - `Command ===>` and line command workflows
 - visible `Top of Data`, `Bottom of Data`, `=COLS>`, and `=BNDS>` lines
 - undo, save/cancel/end, find/change, locate, scroll modes, bounds, numbering, caps
-- direct data-area editing with overwrite, split, join, delete, and line feed
+- direct data-area editing with overwrite/insert modes, split, join, delete, and line feed
 - line commands including `I`, `D`, `DD`, `R`, `RR`, `TS`, `TF`, `TE`, `C`, `CC`, `M`, `MM`, `A`, `B`, `O`, `OO`, `X`, `XX`, `LC`, `LCn`, `LCC`, `UC`, `UCn`, `UCC`
 - stronger bounds-aware behavior, including split validation at active bounds and vertical cursor movement that preserves the intended column across shorter intermediate lines
 
@@ -132,9 +132,11 @@ make check
 - `Ctrl+J`: move the cursor down
 - `Home` / `End`: move to line start / line end
   On many MacBook keyboards this is usually `fn + Left` / `fn + Right`.
+- `Ctrl+A` / `Ctrl+E`: practical aliases for line start / line end
 - `TE` / `TEn` moves focus directly into the data area
 - `Enter` in `TE` mode: finish text entry
 - `Shift+Enter` is disabled while `TE` mode is active
+- `INSERT ON` / `INSERT OFF`: switch the data area between insert and overwrite mode
 
 ## Key Matrix
 
@@ -150,6 +152,7 @@ make check
 | data area | `Shift+Enter` | insert blank line below |
 | data area | `Ctrl+J` | move cursor down |
 | data area | `Home` / `End` | move to line start / line end |
+| data area | `Ctrl+A` / `Ctrl+E` | move to line start / line end |
 | data area | `F7` / `F8` | scroll using active scroll mode |
 | data area | `F10` / `F11` | scroll left / right |
 
@@ -175,6 +178,8 @@ make check
 - `UNNUM`
 - `CAPS ON`
 - `CAPS OFF`
+- `INSERT ON`
+- `INSERT OFF`
 - `UNDO`
 
 Line commands can also be driven from the primary command field with `:`, for example `:D2`.
@@ -183,6 +188,7 @@ Primary and line commands are parsed case-insensitively. Command arguments keep 
 `F7` / `F8` use the active scroll mode; explicit `UP n` / `DOWN n` still use the given count.
 The visible `Scroll ===>` field is currently display-only; change the active mode through `Command ===>` with `SCROLL PAGE`, `SCROLL HALF`, or `SCROLL CSR`.
 `RFIND` / `RCHANGE` continue from the current cursor context, wrap once when needed, and then report `No further matches` instead of cycling forever.
+The status line shows `OVR` or `INS` to reflect the current data-area editing mode.
 
 ## Line Commands
 

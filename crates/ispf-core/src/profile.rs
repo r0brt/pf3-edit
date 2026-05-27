@@ -9,6 +9,7 @@ pub enum CapsMode {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EditProfile {
     pub caps_mode: CapsMode,
+    pub insert_mode: bool,
     pub number_mode: bool,
     pub cols_mode: bool,
     pub scroll_mode: ScrollMode,
@@ -20,6 +21,7 @@ impl Default for EditProfile {
     fn default() -> Self {
         Self {
             caps_mode: CapsMode::Off,
+            insert_mode: false,
             number_mode: false,
             cols_mode: false,
             scroll_mode: ScrollMode::Page,

@@ -17,6 +17,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 - developer convenience `Makefile`
 - public CLI polish via `pf3-edit --help`, `--version`, and `--debug-keys`
 - GitHub Actions CI for formatting, tests, and Clippy
+- modern data-area ergonomics with `Ctrl+A` / `Ctrl+E` aliases and explicit `INSERT ON|OFF`
 
 ### Changed
 
@@ -25,6 +26,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 - command parsing is case-insensitive while preserving operand case
 - line command workflows now support command-line `:` variants
 - session internals are split into focused editing, navigation, and transfer modules
+- the status line now shows `OVR` / `INS` for the active data-area editing mode
 
 ### Fixed
 

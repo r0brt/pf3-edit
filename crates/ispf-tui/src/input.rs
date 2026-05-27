@@ -40,6 +40,18 @@ pub fn map_key(event: KeyEvent) -> AppAction {
         return AppAction::CursorDown;
     }
 
+    if matches!(event.code, KeyCode::Char('a') | KeyCode::Char('A'))
+        && event.modifiers.contains(KeyModifiers::CONTROL)
+    {
+        return AppAction::CursorLineStart;
+    }
+
+    if matches!(event.code, KeyCode::Char('e') | KeyCode::Char('E'))
+        && event.modifiers.contains(KeyModifiers::CONTROL)
+    {
+        return AppAction::CursorLineEnd;
+    }
+
     match event.code {
         KeyCode::F(1) => AppAction::Help,
         KeyCode::F(2) => AppAction::Split,
@@ -167,6 +179,26 @@ mod tests {
         assert_eq!(
             map_key(KeyEvent::new(KeyCode::Char('J'), KeyModifiers::CONTROL)),
             AppAction::CursorDown
+        );
+    }
+
+    #[test]
+    fn maps_ctrl_a_and_ctrl_e_to_line_start_and_end() {
+        assert_eq!(
+            map_key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::CONTROL)),
+            AppAction::CursorLineStart
+        );
+        assert_eq!(
+            map_key(KeyEvent::new(KeyCode::Char('A'), KeyModifiers::CONTROL)),
+            AppAction::CursorLineStart
+        );
+        assert_eq!(
+            map_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL)),
+            AppAction::CursorLineEnd
+        );
+        assert_eq!(
+            map_key(KeyEvent::new(KeyCode::Char('E'), KeyModifiers::CONTROL)),
+            AppAction::CursorLineEnd
         );
     }
 }

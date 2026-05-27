@@ -79,6 +79,11 @@ fn execute_primary_scrolls_and_toggles_profile() {
     assert!(session.profile().cols_mode);
 
     session
+        .execute_primary(PrimaryCommand::Insert(true))
+        .unwrap();
+    assert!(session.profile().insert_mode);
+
+    session
         .execute_primary(PrimaryCommand::Bounds(Some((7, 70))))
         .unwrap();
     assert_eq!(session.profile().bounds, Some((7, 70)));
@@ -667,6 +672,39 @@ fn change_replaces_text_in_place() {
         .unwrap();
 
     assert_eq!(session.buffer().records()[0].text(), "NEW VALUE");
+}
+
+#[test]
+fn insert_mode_shifts_text_to_the_right() {
+    let buffer = EditBuffer::from_text("ABCD\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Insert(true))
+        .unwrap();
+    session.move_cursor_right();
+
+    session.insert_char('X').unwrap();
+
+    assert_eq!(session.buffer().records()[0].text(), "AXBCD");
+    assert_eq!(session.view().cursor_col, 2);
+}
+
+#[test]
+fn insert_mode_respects_the_right_bound() {
+    let buffer = EditBuffer::from_text("ABCD\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Bounds(Some((1, 4))))
+        .unwrap();
+    session
+        .execute_primary(PrimaryCommand::Insert(true))
+        .unwrap();
+    session.move_cursor_right();
+
+    session.insert_char('X').unwrap();
+
+    assert_eq!(session.buffer().records()[0].text(), "AXBC");
+    assert_eq!(session.view().cursor_col, 2);
 }
 
 #[test]

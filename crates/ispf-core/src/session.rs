@@ -551,6 +551,17 @@ impl EditorSession {
             PrimaryCommand::Caps(enabled) => {
                 self.profile.caps_mode = if enabled { CapsMode::On } else { CapsMode::Off };
             }
+            PrimaryCommand::Insert(enabled) => {
+                self.profile.insert_mode = enabled;
+                self.message = Some(SessionMessage {
+                    text: if enabled {
+                        "Insert mode enabled".into()
+                    } else {
+                        "Overwrite mode enabled".into()
+                    },
+                    is_error: false,
+                });
+            }
             PrimaryCommand::Bounds(bounds) => self.profile.bounds = bounds,
             PrimaryCommand::Reset => {
                 for index in 0..self.buffer.records().len() {

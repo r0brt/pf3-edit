@@ -22,6 +22,14 @@ fn parses_basic_primary_commands() {
         parse_primary("caps off").unwrap(),
         PrimaryCommand::Caps(false)
     );
+    assert_eq!(
+        parse_primary("INSERT ON").unwrap(),
+        PrimaryCommand::Insert(true)
+    );
+    assert_eq!(
+        parse_primary("insert off").unwrap(),
+        PrimaryCommand::Insert(false)
+    );
     assert_eq!(parse_primary("COLS").unwrap(), PrimaryCommand::Cols);
     assert_eq!(
         parse_primary("SCROLL PAGE").unwrap(),
