@@ -261,14 +261,14 @@ dependencies = [
 
 [[package]]
 name = "ispf-command"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "thiserror",
 ]
 
 [[package]]
 name = "ispf-core"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "ispf-command",
@@ -278,7 +278,7 @@ dependencies = [
 
 [[package]]
 name = "ispf-screen"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "insta",
  "ispf-command",
@@ -288,7 +288,7 @@ dependencies = [
 
 [[package]]
 name = "ispf-tui"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "crossterm",
