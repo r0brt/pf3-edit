@@ -25,6 +25,9 @@ use crate::input::AppAction;
 pub struct App {
     session: EditorSession,
     command_buffer: String,
+    command_history: Vec<String>,
+    command_history_index: Option<usize>,
+    command_history_draft: Option<String>,
     prefix_buffers: BTreeMap<usize, String>,
     line_command_markers: BTreeMap<usize, String>,
     scroll_rows_hint: Cell<usize>,
@@ -42,6 +45,9 @@ impl App {
         Self {
             session,
             command_buffer: String::new(),
+            command_history: Vec::new(),
+            command_history_index: None,
+            command_history_draft: None,
             prefix_buffers: BTreeMap::new(),
             line_command_markers: BTreeMap::new(),
             scroll_rows_hint: Cell::new(18),
@@ -224,10 +230,25 @@ impl App {
 
         match self.session.view().active_area {
             ActiveArea::CommandLine => match key.code {
+                KeyCode::Up => {
+                    self.history_previous();
+                    self.ui_message = None;
+                    Ok(())
+                }
+                KeyCode::Down => {
+                    self.history_next();
+                    self.ui_message = None;
+                    Ok(())
+                }
                 KeyCode::Char(ch) => {
+                    self.exit_command_history_navigation();
                     self.command_buffer.push(ch);
                     self.ui_message = None;
                     Ok(())
+                }
+                KeyCode::Backspace => {
+                    self.exit_command_history_navigation();
+                    self.handle_action(crate::input::map_key(key))
                 }
                 _ => self.handle_action(crate::input::map_key(key)),
             },
@@ -311,6 +332,7 @@ impl App {
                 return Ok(());
             }
             self.command_buffer.clear();
+            self.record_command_history(raw_command_text);
             self.ui_message = None;
             self.session.activate_data_area();
             self.sync_line_command_markers();
@@ -320,6 +342,7 @@ impl App {
         match parse_primary(&command_text) {
             Ok(command) => {
                 self.execute_primary_command(command)?;
+                self.record_command_history(raw_command_text);
                 if !retain_command {
                     self.command_buffer.clear();
                 }
@@ -399,6 +422,56 @@ impl App {
 
     fn sync_session_state(&mut self) {
         self.should_quit = self.should_quit || self.session.should_exit();
+    }
+
+    fn history_previous(&mut self) {
+        if self.command_history.is_empty() {
+            return;
+        }
+
+        let next_index = match self.command_history_index {
+            Some(index) => index.saturating_sub(1),
+            None => {
+                self.command_history_draft = Some(self.command_buffer.clone());
+                self.command_history.len().saturating_sub(1)
+            }
+        };
+
+        self.command_history_index = Some(next_index);
+        self.command_buffer = self.command_history[next_index].clone();
+    }
+
+    fn history_next(&mut self) {
+        let Some(index) = self.command_history_index else {
+            return;
+        };
+
+        if index + 1 < self.command_history.len() {
+            let next_index = index + 1;
+            self.command_history_index = Some(next_index);
+            self.command_buffer = self.command_history[next_index].clone();
+        } else {
+            self.command_history_index = None;
+            self.command_buffer = self.command_history_draft.take().unwrap_or_default();
+        }
+    }
+
+    fn exit_command_history_navigation(&mut self) {
+        self.command_history_index = None;
+        self.command_history_draft = None;
+    }
+
+    fn record_command_history(&mut self, command: String) {
+        if command.is_empty() {
+            return;
+        }
+
+        self.exit_command_history_navigation();
+        if self.command_history.last() == Some(&command) {
+            return;
+        }
+
+        self.command_history.push(command);
     }
 
     fn sync_line_command_markers(&mut self) {
@@ -1373,6 +1446,57 @@ mod tests {
         assert_eq!(app.session().view().cursor_row, 2);
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
         assert!(app.screen_model(80, 24).rows[0].text_selected);
+    }
+
+    #[test]
+    fn command_line_up_recalls_the_last_executed_command() {
+        let mut app = App::new(EditBuffer::from_text("ONE\n").unwrap());
+        super::initialize_startup_focus(&mut app);
+
+        for ch in "NUMBER".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+
+        app.handle_key(KeyEvent::from(KeyCode::Up)).unwrap();
+
+        assert_eq!(app.command_buffer, "NUMBER");
+    }
+
+    #[test]
+    fn command_line_history_down_restores_the_current_draft() {
+        let mut app = App::new(EditBuffer::from_text("ONE\n").unwrap());
+        super::initialize_startup_focus(&mut app);
+
+        for ch in "NUMBER".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+
+        for ch in "FIN".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_key(KeyEvent::from(KeyCode::Up)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Down)).unwrap();
+
+        assert_eq!(app.command_buffer, "FIN");
+    }
+
+    #[test]
+    fn command_line_history_entries_are_editable() {
+        let mut app = App::new(EditBuffer::from_text("ONE\n").unwrap());
+        super::initialize_startup_focus(&mut app);
+
+        for ch in "NUMBER".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+
+        app.handle_key(KeyEvent::from(KeyCode::Up)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Backspace)).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::Char('S'))).unwrap();
+
+        assert_eq!(app.command_buffer, "NUMBES");
     }
 
     #[test]

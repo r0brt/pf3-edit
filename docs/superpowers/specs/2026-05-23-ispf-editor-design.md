@@ -52,7 +52,7 @@ Implemented highlights:
 - horizontal scroll now distinguishes exact counts from mode-driven PF10/PF11 behavior: `LEFT/RIGHT MAX` jump to the edges, `LEFT/RIGHT n` scroll exact columns, and `CSR` horizontal scrolling anchors the cursor column at the viewport edge in the ISPF style
 - public CLI polish: the binary is exposed as `pf3-edit`, supports `--help`, `--version`, and `--debug-keys`, and documents a direct `cargo install --path crates/ispf-tui` workflow
 - release-facing project polish through a public changelog, clearer README support boundaries, and GitHub Actions CI covering `fmt`, `test`, and `clippy`
-- practical modern keybindings now complement the host-style flow: `Ctrl+A` and `Ctrl+E` act as line start / line end aliases, and the data area supports an explicit `INSERT ON|OFF` mode with visible `OVR` / `INS` status
+- practical modern keybindings now complement the host-style flow: `Ctrl+A` and `Ctrl+E` act as line start / line end aliases, the data area supports an explicit `INSERT ON|OFF` mode with visible `OVR` / `INS` status, and the primary command field provides terminal-like command history via `Up` / `Down`
 
 Current focus for the next `v1.0`-oriented block:
 

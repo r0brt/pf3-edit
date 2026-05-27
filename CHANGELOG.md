@@ -18,6 +18,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 - public CLI polish via `pf3-edit --help`, `--version`, and `--debug-keys`
 - GitHub Actions CI for formatting, tests, and Clippy
 - modern data-area ergonomics with `Ctrl+A` / `Ctrl+E` aliases and explicit `INSERT ON|OFF`
+- command history navigation in `Command ===>` via `Up` / `Down`
 
 ### Changed
 

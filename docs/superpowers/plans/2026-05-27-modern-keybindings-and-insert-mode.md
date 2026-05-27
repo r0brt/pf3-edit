@@ -14,6 +14,7 @@ Improve daily-driver ergonomics in the data area without sacrificing the host-li
 - keep overwrite as the default editing mode
 - show the active editing mode in the status line as `OVR` or `INS`
 - make insert-mode typing bounds-aware in the data area
+- add editable command history navigation in `Command ===>` via `Up` / `Down`
 
 ## Notes
 

@@ -123,6 +123,7 @@ make check
 - `F3`: save and exit
 - `F5`: `RFIND`
 - `F6`: `RCHANGE`
+- `Up` / `Down` in `Command ===>`: walk command history
 - `F7` / `F8`: scroll up / down
 - `F10` / `F11`: scroll left / right
 - `F12`: cancel
@@ -146,6 +147,7 @@ make check
 | global | `F3` | save and exit |
 | global | `F12` | cancel session |
 | command field | `Enter` | execute primary command |
+| command field | `Up` / `Down` | browse command history |
 | command field | `F5` / `F6` | repeat find / repeat change |
 | line command field | `Enter` | execute pending line command(s) |
 | data area | `Enter` | split line at cursor |
