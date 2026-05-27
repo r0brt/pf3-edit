@@ -1,7 +1,7 @@
 # ISPF Editor Local Rebuild Design
 
 Date: 2026-05-23
-Status: Implemented and extended in code, reviewed 2026-05-27 (release-version sync update)
+Status: Implemented and extended in code, reviewed 2026-05-27 (CI Node-24 actions update)
 
 ## Goal
 
@@ -54,6 +54,7 @@ Implemented highlights:
 - release-facing project polish through a public changelog, clearer README support boundaries, and GitHub Actions CI covering `fmt`, `test`, and `clippy`
 - tagged GitHub releases are now configured to package prebuilt `pf3-edit` archives for macOS Apple Silicon and Linux x86_64, while `cargo install` remains the fallback until the first release is cut
 - release hygiene now explicitly includes keeping the workspace version aligned with the next published GitHub tag so packaged binary metadata stays trustworthy
+- CI hygiene now includes keeping GitHub Actions on Node-24-ready major versions so public verification and release runs stay ahead of hosted-runner deprecations
 - practical modern keybindings now complement the host-style flow: `Ctrl+A` and `Ctrl+E` act as line start / line end aliases, the data area supports an explicit `INSERT ON|OFF` mode with visible `OVR` / `INS` status, and the primary command field provides terminal-like command history via `Up` / `Down`
 
 Current focus for the next `v1.0`-oriented block:
