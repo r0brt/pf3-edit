@@ -93,7 +93,6 @@ pf3-edit
 Tagged GitHub releases are configured to publish prebuilt archives for:
 
 - macOS (Apple Silicon)
-- macOS (Intel)
 - Linux x86_64
 
 Until the first tagged release is published, the `cargo install` paths above remain the supported install routes.
@@ -251,6 +250,7 @@ CI runs the same checks plus `cargo fmt --all -- --check` on GitHub Actions.
 - browse-mode behavior is intentionally incomplete
 - prebuilt release archives are only published from tagged GitHub releases; until the first release tag exists, installation still assumes a Rust toolchain
 - Windows packaging is not part of the current release workflow
+- macOS Intel release binaries are temporarily disabled because GitHub's Intel macOS runner availability has proven unreliable for now
 - command coverage is strong for the core workflow, but not yet full-ISPF
 
 ## Release Notes

@@ -24,6 +24,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 ### Changed
 
 - README install guidance now documents the staged move from Rust-based installs toward tagged GitHub release binaries
+- release packaging now targets the two stable release lanes first: macOS Apple Silicon and Linux x86_64
 - scroll behavior now follows profile-driven `PAGE`, `HALF`, and `CSR` modes
 - horizontal scrolling now distinguishes exact counts, `MAX`, and mode-driven PF10/PF11 behavior, including cursor-anchored `CSR` semantics
 - command parsing is case-insensitive while preserving operand case
