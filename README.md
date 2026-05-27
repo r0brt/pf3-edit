@@ -38,7 +38,7 @@ Still missing are broader ISPF command coverage, dataset/member navigation, macr
 - persistent profiles
 - full browse-mode semantics
 - the broader long tail of ISPF command coverage
-- packaged release binaries
+- Windows release binaries
 
 ## Run
 
@@ -89,6 +89,14 @@ This installs the executable as:
 ```bash
 pf3-edit
 ```
+
+Tagged GitHub releases are configured to publish prebuilt archives for:
+
+- macOS (Apple Silicon)
+- macOS (Intel)
+- Linux x86_64
+
+Until the first tagged release is published, the `cargo install` paths above remain the supported install routes.
 
 Useful top-level CLI flags:
 
@@ -241,7 +249,8 @@ CI runs the same checks plus `cargo fmt --all -- --check` on GitHub Actions.
 - no macros or REXX support yet
 - profiles are session-local and not persisted across runs
 - browse-mode behavior is intentionally incomplete
-- release binaries are not published yet; install currently assumes a Rust toolchain
+- prebuilt release archives are only published from tagged GitHub releases; until the first release tag exists, installation still assumes a Rust toolchain
+- Windows packaging is not part of the current release workflow
 - command coverage is strong for the core workflow, but not yet full-ISPF
 
 ## Release Notes

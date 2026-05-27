@@ -1,7 +1,7 @@
 # ISPF Editor Local Rebuild Design
 
 Date: 2026-05-23
-Status: Implemented and extended in code, reviewed 2026-05-27 (modern keybindings and insert-mode update)
+Status: Implemented and extended in code, reviewed 2026-05-27 (release-binaries workflow update)
 
 ## Goal
 
@@ -52,12 +52,13 @@ Implemented highlights:
 - horizontal scroll now distinguishes exact counts from mode-driven PF10/PF11 behavior: `LEFT/RIGHT MAX` jump to the edges, `LEFT/RIGHT n` scroll exact columns, and `CSR` horizontal scrolling anchors the cursor column at the viewport edge in the ISPF style
 - public CLI polish: the binary is exposed as `pf3-edit`, supports `--help`, `--version`, and `--debug-keys`, and documents a direct `cargo install --path crates/ispf-tui` workflow
 - release-facing project polish through a public changelog, clearer README support boundaries, and GitHub Actions CI covering `fmt`, `test`, and `clippy`
+- tagged GitHub releases are now configured to package prebuilt `pf3-edit` archives for macOS Apple Silicon, macOS Intel, and Linux x86_64, while `cargo install` remains the fallback until the first release is cut
 - practical modern keybindings now complement the host-style flow: `Ctrl+A` and `Ctrl+E` act as line start / line end aliases, the data area supports an explicit `INSERT ON|OFF` mode with visible `OVR` / `INS` status, and the primary command field provides terminal-like command history via `Up` / `Down`
 
 Current focus for the next `v1.0`-oriented block:
 
 - keep hardening release-critical editing and viewport invariants
-- continue tightening release readiness, documentation clarity, and installability alongside code
+- continue tightening release readiness, documentation clarity, and first-class installability alongside code
 - keep search/replace edge cases and remaining command-edge cases trustworthy before widening command coverage
 
 Still intentionally outside the implemented scope:

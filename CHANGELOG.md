@@ -8,6 +8,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 
 ### Added
 
+- GitHub Actions release workflow for tagged prebuilt binaries on macOS (Apple Silicon and Intel) plus Linux x86_64
 - ISPF-inspired terminal editor shell with `Command ===>`, line command field, PF-key legend, and `Top of Data` / `Bottom of Data`
 - record-oriented editor core split into `ispf-core`, `ispf-command`, `ispf-screen`, and `ispf-tui`
 - direct data-area editing with overwrite, split, join, delete, line feed, and text-entry mode
@@ -22,6 +23,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 
 ### Changed
 
+- README install guidance now documents the staged move from Rust-based installs toward tagged GitHub release binaries
 - scroll behavior now follows profile-driven `PAGE`, `HALF`, and `CSR` modes
 - horizontal scrolling now distinguishes exact counts, `MAX`, and mode-driven PF10/PF11 behavior, including cursor-anchored `CSR` semantics
 - command parsing is case-insensitive while preserving operand case
