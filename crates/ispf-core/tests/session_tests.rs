@@ -588,6 +588,40 @@ fn rfind_moves_to_the_next_occurrence_after_the_current_match() {
 }
 
 #[test]
+fn rfind_wraps_to_the_first_earlier_occurrence_and_reports_it() {
+    let buffer = EditBuffer::from_text("ONE TWO\nTWO\nTHREE TWO\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Find {
+            pattern: "TWO".into(),
+        })
+        .unwrap();
+    session.execute_primary(PrimaryCommand::RFind).unwrap();
+    session.execute_primary(PrimaryCommand::RFind).unwrap();
+    session.execute_primary(PrimaryCommand::RFind).unwrap();
+
+    assert_eq!(session.view().cursor_row, 0);
+    assert_eq!(session.view().cursor_col, 4);
+    assert_eq!(session.message().unwrap().text, "FIND completed (wrapped)");
+}
+
+#[test]
+fn rfind_reports_when_there_are_no_further_matches() {
+    let buffer = EditBuffer::from_text("ONLY\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Find {
+            pattern: "ONLY".into(),
+        })
+        .unwrap();
+    session.execute_primary(PrimaryCommand::RFind).unwrap();
+
+    assert_eq!(session.message().unwrap().text, "No further matches");
+}
+
+#[test]
 fn locate_moves_cursor_and_view_to_the_requested_line_number() {
     let buffer = EditBuffer::from_text("A\nB\nC\nD\n").unwrap();
     let mut session = EditorSession::new(buffer);
@@ -629,6 +663,68 @@ fn change_positions_cursor_on_the_changed_text() {
 
     assert_eq!(session.buffer().records()[0].text(), "XX NEW YY");
     assert_eq!(session.view().cursor_col, 3);
+}
+
+#[test]
+fn rchange_moves_to_the_next_occurrence() {
+    let buffer = EditBuffer::from_text("OLD\nMID OLD\nTAIL OLD\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Change {
+            from: "OLD".into(),
+            to: "NEW".into(),
+        })
+        .unwrap();
+    session.execute_primary(PrimaryCommand::RChange).unwrap();
+    assert_eq!(session.buffer().records()[1].text(), "MID NEW");
+    assert_eq!(session.message().unwrap().text, "CHANGE completed");
+
+    session.execute_primary(PrimaryCommand::RChange).unwrap();
+    assert_eq!(session.buffer().records()[2].text(), "TAIL NEW");
+    assert_eq!(session.message().unwrap().text, "CHANGE completed");
+}
+
+#[test]
+fn rchange_wraps_to_the_first_earlier_occurrence_and_reports_it() {
+    let buffer = EditBuffer::from_text("OLD AGAIN\nMID OLD\nTAIL OLD\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+    session
+        .execute_primary(PrimaryCommand::Change {
+            from: "OLD".into(),
+            to: "NEW".into(),
+        })
+        .unwrap();
+    session
+        .execute_primary(PrimaryCommand::Locate { target: 3 })
+        .unwrap();
+    session.execute_primary(PrimaryCommand::RChange).unwrap();
+    assert_eq!(session.buffer().records()[2].text(), "TAIL NEW");
+    assert_eq!(session.message().unwrap().text, "CHANGE completed");
+
+    session.execute_primary(PrimaryCommand::RChange).unwrap();
+
+    assert_eq!(session.buffer().records()[1].text(), "MID NEW");
+    assert_eq!(
+        session.message().unwrap().text,
+        "CHANGE completed (wrapped)"
+    );
+}
+
+#[test]
+fn rchange_reports_when_there_are_no_further_matches() {
+    let buffer = EditBuffer::from_text("OLD\n").unwrap();
+    let mut session = EditorSession::new(buffer);
+
+    session
+        .execute_primary(PrimaryCommand::Change {
+            from: "OLD".into(),
+            to: "NEW".into(),
+        })
+        .unwrap();
+    session.execute_primary(PrimaryCommand::RChange).unwrap();
+
+    assert_eq!(session.message().unwrap().text, "No further matches");
 }
 
 #[test]

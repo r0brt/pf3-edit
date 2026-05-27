@@ -2,7 +2,10 @@ mod editing;
 mod navigation;
 mod transfers;
 
-use self::editing::{find_first_in_bounds, find_first_in_bounds_after, replace_first_in_bounds};
+use self::editing::{
+    find_first_in_bounds, find_first_in_bounds_after, find_first_in_bounds_before,
+    find_first_in_bounds_from, replace_first_in_bounds,
+};
 use crate::{CapsMode, EditBuffer, EditProfile, UndoEntry, UndoStack};
 use ispf_command::{HorizontalScroll, PrefixCommand, PrimaryCommand, ScrollMode};
 
@@ -57,7 +60,9 @@ pub struct EditorSession {
     undo: UndoStack,
     message: Option<SessionMessage>,
     last_find: Option<String>,
+    last_find_position: Option<(usize, usize)>,
     last_change: Option<(String, String)>,
+    last_change_position: Option<(usize, usize)>,
     pending_exclude_block: Option<usize>,
     pending_delete_block: Option<usize>,
     pending_repeat_block: Option<usize>,
@@ -96,7 +101,9 @@ impl EditorSession {
             undo: UndoStack::default(),
             message: None,
             last_find: None,
+            last_find_position: None,
             last_change: None,
+            last_change_position: None,
             pending_exclude_block: None,
             pending_delete_block: None,
             pending_repeat_block: None,
@@ -229,6 +236,7 @@ impl EditorSession {
                     self.view.top_row = index;
                     self.view.cursor_col = col;
                     self.desired_cursor_col = col;
+                    self.last_find_position = Some((index, col));
                     self.message = Some(SessionMessage {
                         text: "FIND completed".into(),
                         is_error: false,
@@ -247,19 +255,33 @@ impl EditorSession {
                     .ok_or_else(|| "No previous FIND pattern".to_string())?;
                 let current_row = self.view.cursor_row;
                 let current_col = self.view.cursor_col;
+                let continuing_from_last_match =
+                    self.last_find_position == Some((current_row, current_col));
+                let after_current_match =
+                    current_col.saturating_add(pattern.chars().count().saturating_sub(1));
 
                 let next_match = self
                     .buffer
                     .records()
                     .get(current_row)
                     .and_then(|record| {
-                        find_first_in_bounds_after(
-                            record.text.as_str(),
-                            &pattern,
-                            self.profile.bounds,
-                            current_col,
-                        )
-                        .map(|col| (current_row, col))
+                        if continuing_from_last_match {
+                            find_first_in_bounds_after(
+                                record.text.as_str(),
+                                &pattern,
+                                self.profile.bounds,
+                                after_current_match,
+                            )
+                            .map(|col| (current_row, col))
+                        } else {
+                            find_first_in_bounds_from(
+                                record.text.as_str(),
+                                &pattern,
+                                self.profile.bounds,
+                                current_col,
+                            )
+                            .map(|col| (current_row, col))
+                        }
                     })
                     .or_else(|| {
                         self.buffer
@@ -277,18 +299,58 @@ impl EditorSession {
                             })
                     });
 
+                let wrapped_match = if next_match.is_none() {
+                    self.buffer
+                        .records()
+                        .iter()
+                        .enumerate()
+                        .take(current_row)
+                        .find_map(|(index, record)| {
+                            find_first_in_bounds(
+                                record.text.as_str(),
+                                &pattern,
+                                self.profile.bounds,
+                            )
+                            .map(|col| (index, col))
+                        })
+                        .or_else(|| {
+                            self.buffer.records().get(current_row).and_then(|record| {
+                                find_first_in_bounds_before(
+                                    record.text.as_str(),
+                                    &pattern,
+                                    self.profile.bounds,
+                                    current_col,
+                                )
+                                .map(|col| (current_row, col))
+                            })
+                        })
+                } else {
+                    None
+                };
+
                 if let Some((index, col)) = next_match {
                     self.view.cursor_row = index;
                     self.view.top_row = index;
                     self.view.cursor_col = col;
                     self.desired_cursor_col = col;
+                    self.last_find_position = Some((index, col));
                     self.message = Some(SessionMessage {
                         text: "FIND completed".into(),
                         is_error: false,
                     });
+                } else if let Some((index, col)) = wrapped_match {
+                    self.view.cursor_row = index;
+                    self.view.top_row = index;
+                    self.view.cursor_col = col;
+                    self.desired_cursor_col = col;
+                    self.last_find_position = Some((index, col));
+                    self.message = Some(SessionMessage {
+                        text: "FIND completed (wrapped)".into(),
+                        is_error: false,
+                    });
                 } else {
                     self.message = Some(SessionMessage {
-                        text: "Pattern not found".into(),
+                        text: "No further matches".into(),
                         is_error: true,
                     });
                 }
@@ -316,6 +378,7 @@ impl EditorSession {
                     self.view.top_row = index;
                     self.view.cursor_col = col;
                     self.desired_cursor_col = col;
+                    self.last_change_position = Some((index, col));
                     self.undo.push(UndoEntry::ReplacedLine { index, previous });
                     self.message = Some(SessionMessage {
                         text: "CHANGE completed".into(),
@@ -333,7 +396,109 @@ impl EditorSession {
                     .last_change
                     .clone()
                     .ok_or_else(|| "No previous CHANGE arguments".to_string())?;
-                self.execute_primary(PrimaryCommand::Change { from, to })?;
+                let current_row = self.view.cursor_row;
+                let current_col = self.view.cursor_col;
+                let continuing_from_last_change =
+                    self.last_change_position == Some((current_row, current_col));
+                let after_current_match =
+                    current_col.saturating_add(from.chars().count().saturating_sub(1));
+
+                let next_match = self
+                    .buffer
+                    .records()
+                    .get(current_row)
+                    .and_then(|record| {
+                        if continuing_from_last_change {
+                            find_first_in_bounds_after(
+                                record.text.as_str(),
+                                &from,
+                                self.profile.bounds,
+                                after_current_match,
+                            )
+                            .map(|col| (current_row, col))
+                        } else {
+                            find_first_in_bounds_from(
+                                record.text.as_str(),
+                                &from,
+                                self.profile.bounds,
+                                current_col,
+                            )
+                            .map(|col| (current_row, col))
+                        }
+                    })
+                    .or_else(|| {
+                        self.buffer
+                            .records()
+                            .iter()
+                            .enumerate()
+                            .skip(current_row.saturating_add(1))
+                            .find_map(|(index, record)| {
+                                find_first_in_bounds(
+                                    record.text.as_str(),
+                                    &from,
+                                    self.profile.bounds,
+                                )
+                                .map(|col| (index, col))
+                            })
+                    });
+
+                let wrapped_match = if next_match.is_none() {
+                    self.buffer
+                        .records()
+                        .iter()
+                        .enumerate()
+                        .take(current_row)
+                        .find_map(|(index, record)| {
+                            find_first_in_bounds(record.text.as_str(), &from, self.profile.bounds)
+                                .map(|col| (index, col))
+                        })
+                        .or_else(|| {
+                            self.buffer.records().get(current_row).and_then(|record| {
+                                find_first_in_bounds_before(
+                                    record.text.as_str(),
+                                    &from,
+                                    self.profile.bounds,
+                                    current_col,
+                                )
+                                .map(|col| (current_row, col))
+                            })
+                        })
+                } else {
+                    None
+                };
+
+                let (index, col, wrapped) = if let Some((index, col)) = next_match {
+                    (index, col, false)
+                } else if let Some((index, col)) = wrapped_match {
+                    (index, col, true)
+                } else {
+                    self.message = Some(SessionMessage {
+                        text: "No further matches".into(),
+                        is_error: true,
+                    });
+                    return Ok(());
+                };
+
+                let previous = self.buffer.records()[index].text.clone();
+                let updated = replace_first_in_bounds(&previous, &from, &to, self.profile.bounds)
+                    .ok_or_else(|| "Pattern not found".to_string())?;
+                self.buffer
+                    .replace_line(index, &updated)
+                    .ok_or_else(|| "invalid row".to_string())?;
+                self.view.cursor_row = index;
+                self.view.top_row = index;
+                self.view.cursor_col = col;
+                self.desired_cursor_col = col;
+                self.last_change_position = Some((index, col));
+                self.undo.push(UndoEntry::ReplacedLine { index, previous });
+                self.message = Some(SessionMessage {
+                    text: if wrapped {
+                        "CHANGE completed (wrapped)".into()
+                    } else {
+                        "CHANGE completed".into()
+                    },
+                    is_error: false,
+                });
             }
             PrimaryCommand::Locate { target } => {
                 let row = target.saturating_sub(1);

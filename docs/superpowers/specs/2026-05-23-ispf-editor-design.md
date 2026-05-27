@@ -44,6 +44,7 @@ Implemented highlights:
 - forward and backward focus cycling with `Tab` and `Shift+Tab`
 - case-insensitive command parsing for both primary and line commands while preserving operand case
 - `TE` now hands focus directly back to the data area and blocks `Shift+Enter` while text entry is active
+- repeat search and replace now follow the current cursor context, wrap once when needed, and report clearly when no further matches exist
 - repo-level make targets for routine development and verification
 - stronger `BOUNDS` invariants: `TS` and direct line splits reject out-of-bounds cursor positions, and vertical cursor movement preserves the intended horizontal column across shorter intermediate lines
 - real profile-driven scroll modes (`PAGE`, `HALF`, `CSR`) now drive the visible `Scroll ===>` value and PF7/PF8 viewport behavior
