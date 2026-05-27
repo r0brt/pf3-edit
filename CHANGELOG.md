@@ -29,7 +29,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 ### Fixed
 
 - `RFIND` / `F5` now continue from the current match instead of restarting at the first occurrence
-- `RFIND` / `RCHANGE` now continue from the current cursor context, wrap once when needed, and report when no further matches exist
+- `RFIND` / `RCHANGE` now continue from the current cursor context, wrap once when needed, and stop with `No further matches` instead of cycling forever
 - quoted `FIND` / `CHANGE` arguments now work correctly
 - `FIND` / `CHANGE` / `RCHANGE` place the cursor on the actual matched or changed text
 - bounds-aware editing now rejects invalid split positions and preserves intended cursor columns more reliably

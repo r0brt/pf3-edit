@@ -61,8 +61,10 @@ pub struct EditorSession {
     message: Option<SessionMessage>,
     last_find: Option<String>,
     last_find_position: Option<(usize, usize)>,
+    last_find_wrapped: bool,
     last_change: Option<(String, String)>,
     last_change_position: Option<(usize, usize)>,
+    last_change_wrapped: bool,
     pending_exclude_block: Option<usize>,
     pending_delete_block: Option<usize>,
     pending_repeat_block: Option<usize>,
@@ -102,8 +104,10 @@ impl EditorSession {
             message: None,
             last_find: None,
             last_find_position: None,
+            last_find_wrapped: false,
             last_change: None,
             last_change_position: None,
+            last_change_wrapped: false,
             pending_exclude_block: None,
             pending_delete_block: None,
             pending_repeat_block: None,
@@ -218,6 +222,7 @@ impl EditorSession {
             }
             PrimaryCommand::Find { pattern } => {
                 self.last_find = Some(pattern.clone());
+                self.last_find_wrapped = false;
                 if let Some((index, col)) =
                     self.buffer
                         .records()
@@ -257,6 +262,13 @@ impl EditorSession {
                 let current_col = self.view.cursor_col;
                 let continuing_from_last_match =
                     self.last_find_position == Some((current_row, current_col));
+                if continuing_from_last_match && self.last_find_wrapped {
+                    self.message = Some(SessionMessage {
+                        text: "No further matches".into(),
+                        is_error: true,
+                    });
+                    return Ok(());
+                }
                 let after_current_match =
                     current_col.saturating_add(pattern.chars().count().saturating_sub(1));
 
@@ -334,6 +346,7 @@ impl EditorSession {
                     self.view.cursor_col = col;
                     self.desired_cursor_col = col;
                     self.last_find_position = Some((index, col));
+                    self.last_find_wrapped = false;
                     self.message = Some(SessionMessage {
                         text: "FIND completed".into(),
                         is_error: false,
@@ -344,6 +357,7 @@ impl EditorSession {
                     self.view.cursor_col = col;
                     self.desired_cursor_col = col;
                     self.last_find_position = Some((index, col));
+                    self.last_find_wrapped = true;
                     self.message = Some(SessionMessage {
                         text: "FIND completed (wrapped)".into(),
                         is_error: false,
@@ -357,6 +371,7 @@ impl EditorSession {
             }
             PrimaryCommand::Change { from, to } => {
                 self.last_change = Some((from.clone(), to.clone()));
+                self.last_change_wrapped = false;
                 if let Some((index, col)) =
                     self.buffer
                         .records()
@@ -379,6 +394,7 @@ impl EditorSession {
                     self.view.cursor_col = col;
                     self.desired_cursor_col = col;
                     self.last_change_position = Some((index, col));
+                    self.last_change_wrapped = false;
                     self.undo.push(UndoEntry::ReplacedLine { index, previous });
                     self.message = Some(SessionMessage {
                         text: "CHANGE completed".into(),
@@ -400,6 +416,13 @@ impl EditorSession {
                 let current_col = self.view.cursor_col;
                 let continuing_from_last_change =
                     self.last_change_position == Some((current_row, current_col));
+                if continuing_from_last_change && self.last_change_wrapped {
+                    self.message = Some(SessionMessage {
+                        text: "No further matches".into(),
+                        is_error: true,
+                    });
+                    return Ok(());
+                }
                 let after_current_match =
                     current_col.saturating_add(from.chars().count().saturating_sub(1));
 
@@ -490,6 +513,7 @@ impl EditorSession {
                 self.view.cursor_col = col;
                 self.desired_cursor_col = col;
                 self.last_change_position = Some((index, col));
+                self.last_change_wrapped = wrapped;
                 self.undo.push(UndoEntry::ReplacedLine { index, previous });
                 self.message = Some(SessionMessage {
                     text: if wrapped {

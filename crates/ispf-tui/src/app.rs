@@ -1390,6 +1390,26 @@ mod tests {
     }
 
     #[test]
+    fn f5_reports_no_further_matches_after_a_wrapped_repeat() {
+        let mut app = App::new(EditBuffer::from_text("ONE TWO\nTWO\nTHREE TWO\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        for ch in "FIND TWO".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(5))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(5))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(5))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(5))).unwrap();
+
+        assert_eq!(
+            app.session().message().map(|message| message.text.as_str()),
+            Some("No further matches")
+        );
+    }
+
+    #[test]
     fn command_line_change_returns_focus_to_data_area_on_the_changed_row() {
         let mut app = App::new(EditBuffer::from_text("OLD\nKEEP\n").unwrap());
 
@@ -1485,6 +1505,27 @@ mod tests {
             Some("No further matches")
         );
         assert_eq!(app.session().view().active_area, ActiveArea::DataArea);
+    }
+
+    #[test]
+    fn f6_reports_no_further_matches_after_a_wrapped_repeat() {
+        let mut app = App::new(EditBuffer::from_text("OLD AGAIN\nMID OLD\nTAIL OLD\n").unwrap());
+
+        app.handle_action(AppAction::ToggleFocus).unwrap();
+        for ch in "CHANGE OLD NEW".chars() {
+            app.handle_key(KeyEvent::from(KeyCode::Char(ch))).unwrap();
+        }
+        app.handle_action(AppAction::Execute).unwrap();
+        app.handle_action(AppAction::CursorDown).unwrap();
+        app.handle_action(AppAction::CursorDown).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(6))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(6))).unwrap();
+        app.handle_key(KeyEvent::from(KeyCode::F(6))).unwrap();
+
+        assert_eq!(
+            app.session().message().map(|message| message.text.as_str()),
+            Some("No further matches")
+        );
     }
 
     #[test]

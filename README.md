@@ -182,7 +182,7 @@ Line commands can also be driven from the primary command field with `:`, for ex
 Primary and line commands are parsed case-insensitively. Command arguments keep their original case.
 `F7` / `F8` use the active scroll mode; explicit `UP n` / `DOWN n` still use the given count.
 The visible `Scroll ===>` field is currently display-only; change the active mode through `Command ===>` with `SCROLL PAGE`, `SCROLL HALF`, or `SCROLL CSR`.
-`RFIND` / `RCHANGE` continue from the current cursor context, wrap once when needed, and report when no further matches exist.
+`RFIND` / `RCHANGE` continue from the current cursor context, wrap once when needed, and then report `No further matches` instead of cycling forever.
 
 ## Line Commands
 
