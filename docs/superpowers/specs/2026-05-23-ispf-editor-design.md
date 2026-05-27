@@ -1,7 +1,7 @@
 # ISPF Editor Local Rebuild Design
 
 Date: 2026-05-23
-Status: Implemented and extended in code, reviewed 2026-05-27 (v1.0 release-candidate audit passed)
+Status: Implemented and extended in code, reviewed 2026-05-27 (`v1.0.0` released; post-`v1` roadmap defined)
 
 ## Goal
 
@@ -57,11 +57,12 @@ Implemented highlights:
 - CI hygiene now includes keeping GitHub Actions on Node-24-ready major versions so public verification and release runs stay ahead of hosted-runner deprecations
 - practical modern keybindings now complement the host-style flow: `Ctrl+A` and `Ctrl+E` act as line start / line end aliases, the data area supports an explicit `INSERT ON|OFF` mode with visible `OVR` / `INS` status, and the primary command field provides terminal-like command history via `Up` / `Down`
 
-Current focus for the next `v1.0`-oriented block:
+Current focus after `v1.0.0`:
 
-- cut the first scoped `v1.0.0` release from the current stable surface
-- treat follow-up work as post-`v1.0` polish or capability expansion
-- avoid opening broad new command families until the first `v1.0` release is tagged and documented
+- treat `v1.0.0` as the stable public baseline
+- use `v1.1` for polish, adoption, and public usability improvements
+- aim `v2.0` at workbench-level expansion such as file navigation, split/swap improvements, and persistent profiles
+- reserve `v3.0` for macros, scriptability, and deeper extension points
 
 Still intentionally outside the implemented scope:
 

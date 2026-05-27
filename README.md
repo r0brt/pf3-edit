@@ -21,6 +21,16 @@ Current implemented highlights:
 
 Still missing are broader ISPF command coverage, dataset/member navigation, macros, persistent profiles, and deeper browse/recovery behavior.
 
+## Roadmap
+
+The post-`v1.0.0` product direction is documented in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+In short:
+
+- `v1.1` focuses on polish, adoption, and public usability
+- `v2.0` aims to turn `pf3-edit` into a small ISPF-inspired workbench
+- `v3.0` is the likely home for macros, scripting, and stronger extension points
+
 ## v1.0 Release Checklist
 
 Current release-candidate checklist:
@@ -266,7 +276,7 @@ CI runs the same checks plus `cargo fmt --all -- --check` on GitHub Actions.
 - Windows packaging is not part of the current release workflow
 - macOS Intel release binaries are temporarily disabled because GitHub's Intel macOS runner availability has proven unreliable for now
 - command coverage is strong for the core workflow, but not yet full-ISPF
-- a final explicit `v1.0` release-candidate workflow audit is still recommended before calling the editor fully `v1.0`
+- the roadmap now intentionally prioritizes product-level growth over chasing full historical ISPF parity
 
 ## Release Notes
 
