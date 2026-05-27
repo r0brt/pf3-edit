@@ -62,7 +62,10 @@ fn binary_version_succeeds() {
         .unwrap();
 
     assert!(output.status.success());
-    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "0.1.0");
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout).trim(),
+        env!("CARGO_PKG_VERSION")
+    );
 }
 
 #[test]

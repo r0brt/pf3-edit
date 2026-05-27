@@ -23,6 +23,7 @@ The format is intentionally lightweight and optimized for a fast-moving local-fi
 
 ### Changed
 
+- the next release line restores alignment between Git tags and embedded binary version metadata
 - README install guidance now documents the staged move from Rust-based installs toward tagged GitHub release binaries
 - release packaging now targets the two stable release lanes first: macOS Apple Silicon and Linux x86_64
 - scroll behavior now follows profile-driven `PAGE`, `HALF`, and `CSR` modes
